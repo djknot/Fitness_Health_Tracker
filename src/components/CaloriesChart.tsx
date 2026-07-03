@@ -21,9 +21,12 @@ interface CaloriesChartProps {
 export function CaloriesChart({ data, target, className = 'h-56' }: CaloriesChartProps) {
   const theme = useChartTheme();
 
-  const renderTooltip = (props: { active?: boolean; payload?: Array<{ value?: number | string; payload?: { date: string } }> }) => {
+  const renderTooltip = (props: {
+    active?: boolean;
+    payload?: ReadonlyArray<{ value?: number | string | ReadonlyArray<number | string>; payload?: { date?: string } }>;
+  }) => {
     const point = props.payload?.[0];
-    if (!props.active || !point?.payload) return null;
+    if (!props.active || !point?.payload?.date) return null;
     return (
       <ChartTooltipBox theme={theme}>
         <TooltipValue theme={theme}>{Number(point.value).toLocaleString('en-US')} kcal</TooltipValue>
@@ -35,7 +38,7 @@ export function CaloriesChart({ data, target, className = 'h-56' }: CaloriesChar
   return (
     <div className={`w-full ${className}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke={theme.grid} strokeWidth={1} />
           <XAxis
             dataKey="date"

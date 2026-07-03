@@ -39,13 +39,16 @@ export function WeightChart({ series, targetWeightKg, units, className = 'h-56' 
     Math.ceil(Math.max(...values) + 1),
   ];
 
-  const renderTooltip = (props: { active?: boolean; payload?: Array<{ value?: number | string; payload?: { date: string } }> }) => {
+  const renderTooltip = (props: {
+    active?: boolean;
+    payload?: ReadonlyArray<{ value?: number | string | ReadonlyArray<number | string>; payload?: { date?: string } }>;
+  }) => {
     const point = props.payload?.[0];
-    if (!props.active || !point?.payload) return null;
+    if (!props.active || !point?.payload?.date) return null;
     return (
       <ChartTooltipBox theme={theme}>
         <TooltipValue theme={theme}>
-          {point.value} {unit}
+          {String(point.value)} {unit}
         </TooltipValue>
         <TooltipLabel theme={theme}>{formatMedium(point.payload.date)}</TooltipLabel>
       </ChartTooltipBox>
