@@ -2,6 +2,14 @@
 
 Newest first. Format: date — decision — rationale/tradeoff.
 
+## 2026-07-03 — Hosting: GitHub Pages via Actions from the working branch
+Static local-first app → free Pages hosting fits perfectly; localStorage is per-origin
+so users keep their data across deploys. Vite `base: '/Fitness_Health_Tracker/'`,
+router `basename={import.meta.env.BASE_URL}`, relative URLs in the PWA manifest, and a
+`404.html` copy of `index.html` as the SPA fallback. Workflow deploys on push to
+`claude/fitness-health-tracking-app-f7yhxv` (the repo's default branch — first branch
+ever pushed) and runs tests before building.
+
 ## 2026-07-03 — Settings drafts are unit-coupled and version-keyed
 Adversarial review (34-agent workflow, 9 confirmed findings → 6 unique bugs) drove two
 patterns now load-bearing in Settings: (1) every weight/length draft string is parsed

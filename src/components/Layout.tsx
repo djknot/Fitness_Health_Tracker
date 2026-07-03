@@ -16,7 +16,7 @@ export default function Layout() {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-edge bg-surface px-3 py-5 md:flex">
         <div className="mb-6 flex items-center gap-2.5 px-2">
-          <img src="/icon.svg" alt="" className="size-8 rounded-lg" />
+          <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" className="size-8 rounded-lg" />
           <div>
             <div className="text-sm font-bold leading-tight text-ink">FitTrack</div>
             <div className="text-[11px] leading-tight text-muted">Fitness &amp; health</div>

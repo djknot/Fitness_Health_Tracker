@@ -1,5 +1,9 @@
 # FitTrack — Fitness & Health Tracker
 
+**Live app:** https://djknot.github.io/Fitness_Health_Tracker/ (deployed automatically
+from this branch by GitHub Actions — open it on your phone and "Add to Home Screen"
+to install it like an app).
+
 A **local-first** fitness and health tracking web app. Log workouts, meals, water,
 and body metrics; look up nutrition facts for foods by name or brand; and track your
 daily intake against a calorie target that's **recommended from your own current state
