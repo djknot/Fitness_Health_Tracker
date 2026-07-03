@@ -37,19 +37,26 @@ export function Button({
   return <button type={type} className={`btn ${variantClass} ${className}`} {...rest} />;
 }
 
-/** Small square icon-only button (e.g. delete); requires an aria-label. */
+/**
+ * Small square icon-only button; requires an aria-label.
+ * `variant="danger"` (default) gets the destructive red hover — use
+ * `variant="neutral"` for non-destructive actions like edit or favorite.
+ */
 export function IconButton({
   label,
+  variant = 'danger',
   className = '',
   children,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { label: string }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; variant?: 'danger' | 'neutral' }) {
+  const hover =
+    variant === 'danger' ? 'hover:bg-bad/10 hover:text-bad' : 'hover:bg-accent-wash hover:text-ink';
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
-      className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-bad/10 hover:text-bad focus-visible:outline-2 focus-visible:outline-accent ${className}`}
+      className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors ${hover} focus-visible:outline-2 focus-visible:outline-accent ${className}`}
       {...rest}
     >
       {children}

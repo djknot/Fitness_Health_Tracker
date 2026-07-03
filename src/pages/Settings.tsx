@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Download, FlaskConical, Trash2, Upload } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
@@ -17,38 +17,11 @@ import { ACTIVITY_LABELS, MAX_WEEKLY_RATE_KG, recommend } from '../lib/recommend
 import { downloadTextFile, parseBackup, serializeBackup } from '../lib/backup';
 import { sampleData } from '../lib/sample';
 import { Button, CardTitle, Field, PageHeader, Select, TextInput } from '../components/ui';
-
-/** Show a transient "Saved ✓" flag for 2 s; the timer is cleared on unmount. */
-function useSavedFlash(): [boolean, () => void] {
-  const [saved, setSaved] = useState(false);
-  const timer = useRef<number | null>(null);
-  useEffect(
-    () => () => {
-      if (timer.current !== null) window.clearTimeout(timer.current);
-    },
-    [],
-  );
-  const flash = () => {
-    setSaved(true);
-    if (timer.current !== null) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setSaved(false), 2000);
-  };
-  return [saved, flash];
-}
-
-/** '' or non-numeric → undefined, else the parsed number. */
-function numOrUndefined(s: string): number | undefined {
-  const t = s.trim();
-  if (t === '') return undefined;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-/** Parse a positive number, falling back when blank/invalid/non-positive. */
-function positiveOr(s: string, fallback: number): number {
-  const n = numOrUndefined(s);
-  return n != null && n > 0 ? n : fallback;
-}
+import AppearanceCard from '../components/settings/AppearanceCard';
+import CustomFoods from '../components/settings/CustomFoods';
+import FoodDatabaseCard from '../components/settings/FoodDatabaseCard';
+import TargetOptions from '../components/settings/TargetOptions';
+import { numOrUndefined, positiveOr, useSavedFlash } from '../components/settings/shared';
 
 /** "height", "height and age", "height, age and sex" */
 function listJoin(items: string[]): string {
@@ -208,6 +181,8 @@ function SettingsView() {
     <div className="flex flex-col gap-4 sm:gap-5">
       <PageHeader title="Settings" />
 
+      <AppearanceCard />
+
       <section className="card">
         <CardTitle title="Goals & units" />
         <div className="grid gap-3 sm:grid-cols-2">
@@ -358,6 +333,12 @@ function SettingsView() {
         </div>
       </section>
 
+      <TargetOptions />
+
+      <CustomFoods />
+
+      <FoodDatabaseCard />
+
       <section className="card">
         <CardTitle title="Your data" sub="Everything is stored locally in this browser." />
         <div className="divide-y divide-line">
@@ -397,10 +378,10 @@ function SettingsView() {
       <section className="card">
         <CardTitle title="About FitTrack" />
         <p className="text-sm leading-relaxed text-ink2">
-          FitTrack 0.1.0 — a local-first fitness &amp; health tracker. Your data never leaves this
-          device, with one exception: food-name searches are sent to Open Food Facts when you use
-          the food lookup. You can install FitTrack as an app from your browser menu (Add to Home
-          Screen).
+          FitTrack 0.2.0 — a local-first fitness &amp; health tracker. Your data never leaves this
+          device, with one exception: food-name searches are sent to Open Food Facts — and to USDA
+          FoodData Central when you have added an API key — when you use the food lookup. You can
+          install FitTrack as an app from your browser menu (Add to Home Screen).
         </p>
       </section>
     </div>

@@ -1,49 +1,42 @@
 # Active Context
 
 ## Active branch
-`claude/fitness-health-tracking-app-f7yhxv` (default). `gh-pages` = CI-managed builds.
+`claude/v0.2-memory-dynamic-workflows-qp37oq` (v0.2 work). Default branch
+`claude/fitness-health-tracking-app-f7yhxv` deploys via CI → gh-pages.
 Live app: https://djknot.github.io/Fitness_Health_Tracker/
 
 ## Current focus
-**v0.2 feature batch — IN PROGRESS.** User-approved scope: all "easy tier" items
-(mood, extra measurements, fasting, edit-in-place, workout templates, exercise burn,
-favorites/recents, daily check-in card, manual theme toggle) + barcode scanning,
-USDA food DB, custom foods, Reports page, exercise-calories-feed-target (earn-back),
-and self-calibrating TDEE — earn-back and adaptive TDEE both user-toggleable in prefs.
-No AI features (explicitly declined).
+**v0.2 feature batch — pages BUILT, e2e-verified; adversarial review next.**
+Scope (user-approved): mood, extra measurements, fasting, edit-in-place, workout
+templates, exercise burn, favorites/recents, daily check-in card, manual theme
+toggle, barcode scanning, USDA food DB, custom foods, Reports page, earn-back,
+self-calibrating TDEE (both toggleable in prefs). No AI features.
 
-## State right now — foundation DONE and pushed (checkpoint commit after 82fbe79)
-- types.ts v2: MetricEntry (+mood/chest/hips/arm/thigh), Fast, WorkoutTemplate,
-  CustomFood, QuickFood, Prefs (theme/usdaApiKey/earnBackExercise/adaptiveTdee),
-  FoodRecord moved here (source: local|off|usda|custom).
-- Store v2 (persist version 2, migrate spreads emptyData defaults): new slices
-  fasts/templates/customFoods/favoriteFoods/recentFoods/prefs; update* actions for
-  workout/food/metric/customFood; toggleFavoriteFood; start/endFast; addFood pushes
-  recents LRU (lib/quickfoods.ts).
-- New libs: burn.ts (METs, MINUTES_PER_SET fallback), adaptive.ts (28d window, ≥14
-  logged days ≥1000 kcal, weigh-in span ≥14d, clamp 0.6–1.4×formula), usda.ts
-  (mapUsdaFoods pure + searchUsda), fasting.ts, quickfoods.ts; foodSearch.searchFoods
-  now takes {signal, usdaApiKey, customFoods} and merges custom→local→OFF∥USDA;
-  lookupBarcode(code) added; recommend.ts refactored (targetsFromTdee) + NEW
-  dailyTargetInfo(data, date) = base target (manual|recommended|recommended-adaptive)
-  + earn-back burn → THE function pages should track against.
-- Theme: prefs.theme stamps data-theme on <html> (App.useApplyTheme); index.css has
-  [data-theme] overrides after the media query; useIsDark()/useChartTheme() respect it.
-- Routing/nav: /reports added (PLACEHOLDER page only); bottom nav now 6 cols.
-- sample.ts/backup.ts cover all new slices (backups are backward compatible).
-- barcode-detector@3.2.0 installed (use ponyfill import, lazy-load in scanner).
+## State right now — v0.2 pages COMPLETE (6-agent workflow + integration)
+- All five pages upgraded + Reports real page + `lib/reports.ts`; new components
+  under components/{nutrition,workouts,checkin,reports,settings}/. Pages track
+  against dailyTargetInfo (earned-back note + adaptive chip).
+- IconButton grew a `variant="neutral"` (non-destructive hover) — used by edit/
+  star/template/close buttons; deletes keep the danger hover.
+- Data-entry forms carry `noValidate`: native step/min checks silently blocked
+  submits (e.g. stored sleep 6.4 vs step=0.25 made the metrics editor unsavable —
+  found by e2e). JS parsing remains the validator; Metrics date input now has the
+  same explicit onChange guard as Nutrition/Workouts.
+- tsc strict clean; 136 unit tests green (11 files); production build green
+  (main ~761 kB + lazy 44 kB barcode ponyfill chunk).
+- Playwright e2e vs the preview build: 41/41 steps green (sample load, chips,
+  barcode manual path incl. offline degradation, fasting, all edit-in-place flows,
+  templates, burn chips, check-in, earned-back, adaptive panel, Reports, theme
+  toggle, persistence). Screenshots (light/dark/mobile) reviewed.
 
 ## Next immediate steps
-1. Run the 6-agent page workflow (specs in progress.md "v0.2 build plan"): Nutrition
-   (favorites/recents chips, barcode scanner modal + manual code entry, fasting card,
-   edit rows, dailyTargetInfo), Workouts (templates, strength duration, burn chips,
-   edit), Metrics+Dashboard (new fields, mood, BMI, check-in card, burn-aware target),
-   Reports (real page), Settings (theme select, USDA key, toggles, custom-foods CRUD,
-   adaptive preview), tests (burn/adaptive/fasting/quickfoods/usda-mapping/target).
-2. Integrate: tsc, vitest, build, Playwright e2e (extend verify script), screenshots.
-3. Adversarial review workflow → fix confirmed findings.
-4. Memory-bank sync, commit, push (auto-deploys to the live URL).
+1. Adversarial review workflow over `git diff 82fbe79 → HEAD` (foundation + pages
+   were never reviewed): multi-lens finders → dedup → 3-vote refutation panel;
+   fix confirmed findings, re-verify (tsc/tests/build + targeted e2e).
+2. Final memory-bank sync (progress/decisionLog), commit, push.
+3. NOTE: this branch does NOT auto-deploy (workflow triggers only on the default
+   branch) — merging to default publishes v0.2.
 
 ## Active obstacles
-None. Note: sandbox cannot reach github.io or use device camera — verify barcode via
-manual-code-entry path; OFF/USDA network may be blocked in sandbox (degrade gracefully).
+None. Sandbox: no camera + OFF/USDA unreachable → barcode camera path and remote
+search degrade gracefully (verified); manual barcode entry is the testable path.
