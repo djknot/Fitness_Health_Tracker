@@ -87,9 +87,11 @@ export default function Dashboard() {
     const target = goals.targetWeightKg;
     let good: boolean | null = null;
     if (target != null) {
-      const toward = (target < snap.weightKg && delta < 0) || (target > snap.weightKg && delta > 0);
-      const away = (target < snap.weightKg && delta > 0) || (target > snap.weightKg && delta < 0);
-      good = toward ? true : away ? false : null;
+      // Compare distance-to-goal before vs after so reaching or crossing the
+      // target still counts as progress.
+      const distNow = Math.abs(snap.weightKg - target);
+      const distBefore = Math.abs(snap.weightKg - delta - target);
+      good = distNow < distBefore ? true : distNow > distBefore ? false : null;
     }
     const shown = kgToDisplay(delta, goals.units);
     const colorClass = good === null ? 'text-ink2' : good ? 'text-good' : 'text-bad';

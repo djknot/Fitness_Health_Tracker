@@ -119,7 +119,7 @@ function WorkoutForm({ onClose }: { onClose: () => void }) {
       ),
     );
 
-  const canSave = exercises.some((ex) => ex.name.trim() !== '');
+  const canSave = date !== '' && exercises.some((ex) => ex.name.trim() !== '');
 
   const resetDrafts = () => {
     setDate(todayISO());
@@ -164,7 +164,10 @@ function WorkoutForm({ onClose }: { onClose: () => void }) {
               type="date"
               value={date}
               max={todayISO()}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v && v <= todayISO()) setDate(v);
+              }}
             />
           </Field>
           <Field label="Workout name">

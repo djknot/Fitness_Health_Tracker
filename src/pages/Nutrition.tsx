@@ -114,7 +114,12 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
         <div className="flex flex-wrap gap-2">
           <TextInput
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              // Editing the name detaches the picked food so search works again
+              // and the typed text is what actually gets saved.
+              setSelected(null);
+            }}
             placeholder="Add food — search or type your own…"
             className="flex-1 min-w-40"
           />

@@ -31,12 +31,18 @@
   recommendation preview (BMR 1,757 / TDEE 2,723 / target 2,173 verified), persistence
   across reload; light/dark/mobile screenshots reviewed; CaloriesChart y-axis clipping fixed.
 
-## In progress
-- Adversarial review workflow (4 finder lenses × 3-vote verification) before final commit.
+## Review round (completed)
+- Adversarial review workflow: 4 finder lenses, 3-vote refutation panel per finding
+  (34 agents). 9 confirmed findings → 6 unique bugs, all fixed and behaviorally
+  re-verified via Playwright (unit-switch conversion, draft re-seeding, food-search
+  selection clearing, workout date guard, goal-crossing delta color, Meter aria).
+  1 finding refuted (SleepChart domain clipping — recharts extends the domain).
 
-## Left to build (M1)
-- [ ] Apply confirmed review findings (if any).
-- [ ] Final commit + push (pages, tests, README, memory-bank sync).
+## M1 status: COMPLETE
+- [x] All five pages, food lookup, intake recommendation, tests (57), build, e2e.
+- [x] Review fixes applied and verified.
+- [x] Pushed to `claude/fitness-health-tracking-app-f7yhxv` (foundation `1365453`,
+  features `d30c355`, review fixes follow).
 
 ## Known gaps / backlog
 - No service worker yet (app shell not offline-cacheable; manifest-only PWA).

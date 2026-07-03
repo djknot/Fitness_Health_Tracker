@@ -2,6 +2,18 @@
 
 Newest first. Format: date — decision — rationale/tradeoff.
 
+## 2026-07-03 — Settings drafts are unit-coupled and version-keyed
+Adversarial review (34-agent workflow, 9 confirmed findings → 6 unique bugs) drove two
+patterns now load-bearing in Settings: (1) every weight/length draft string is parsed
+and labelled with `draftUnits` (never `goals.units`), and `onUnitsChange` converts all
+drafts in lockstep — a draft value and its unit must never diverge; (2) the store keeps
+a non-persisted `dataVersion` bumped by `replaceAll`/`resetAll`, and Settings remounts
+on it (`key={dataVersion}`) so seeded-once drafts can't mask or revert imported data.
+Also fixed in the same round: Workouts date input guarded like Nutrition's (no ''/future
+dates persisted), food-search selection clears when the name is edited, dashboard weight
+delta compares distance-to-goal before/after (crossing the goal now reads as progress),
+Meter clamps aria-valuenow with aria-valuetext carrying the true over-target value.
+
 ## 2026-07-03 — Food lookup: bundled local DB + Open Food Facts (no API key)
 User asked for nutrition lookup by food/brand/quantity. Hybrid in `lib/foodDb.ts` +
 `lib/foodSearch.ts`: ~95 curated generic foods per-100g work offline/instantly; branded

@@ -56,7 +56,7 @@ function listJoin(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
-export default function Settings() {
+function SettingsView() {
   const workouts = useAppStore((s) => s.workouts);
   const foods = useAppStore((s) => s.foods);
   const waterByDate = useAppStore((s) => s.waterByDate);
@@ -80,12 +80,20 @@ export default function Settings() {
 
   const onUnitsChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const next = e.target.value as Units;
-    // Keep the target-weight draft equivalent across the unit switch.
-    setTargetWeight((prev) => {
+    if (next === draftUnits) return;
+    // Keep every weight/length draft equivalent across the unit switch —
+    // they are parsed with draftUnits, so value and unit must move together.
+    const convertWeight = (prev: string) => {
       const n = numOrUndefined(prev);
-      if (n == null) return prev;
-      return String(kgToDisplay(displayToKg(n, draftUnits), next));
-    });
+      return n == null ? prev : String(kgToDisplay(displayToKg(n, draftUnits), next));
+    };
+    const convertLength = (prev: string) => {
+      const n = numOrUndefined(prev);
+      return n == null ? prev : String(cmToDisplay(displayToCm(n, draftUnits), next));
+    };
+    setTargetWeight(convertWeight);
+    setPace(convertWeight);
+    setHeight(convertLength);
     setDraftUnits(next);
   };
 
@@ -109,24 +117,26 @@ export default function Settings() {
   const [sex, setSex] = useState<'' | Sex>(profile.sex ?? '');
   const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel);
   const [pace, setPace] = useState(() => String(kgToDisplay(profile.weeklyRateKg, goals.units)));
+  // NOTE: height/pace drafts are always interpreted with draftUnits (never
+  // goals.units) — onUnitsChange converts them in lockstep with the select.
   const [useRec, setUseRec] = useState(profile.useRecommendedTarget);
   const [profileSaved, flashProfileSaved] = useSavedFlash();
 
   const heightNum = numOrUndefined(height);
   const paceNum = numOrUndefined(pace);
   const draftProfile: Profile = {
-    heightCm: heightNum != null ? displayToCm(heightNum, goals.units) : undefined,
+    heightCm: heightNum != null ? displayToCm(heightNum, draftUnits) : undefined,
     age: numOrUndefined(age),
     sex: sex === '' ? undefined : sex,
     activityLevel: activity,
-    weeklyRateKg: paceNum != null ? displayToKg(paceNum, goals.units) : 0.5,
+    weeklyRateKg: paceNum != null ? displayToKg(paceNum, draftUnits) : 0.5,
     useRecommendedTarget: useRec,
   };
   const currentWeightKg = latestWeight(metrics)?.weightKg;
   const rec = recommend(draftProfile, currentWeightKg, goals.targetWeightKg);
 
   const effectiveRateKg = Math.min(Math.abs(draftProfile.weeklyRateKg) || 0.5, MAX_WEEKLY_RATE_KG);
-  const paceDisplay = kgToDisplay(effectiveRateKg, goals.units);
+  const paceDisplay = kgToDisplay(effectiveRateKg, draftUnits);
 
   const missing: string[] = [];
   if (draftProfile.heightCm == null || draftProfile.heightCm <= 0) missing.push('height');
@@ -257,7 +267,7 @@ export default function Settings() {
           sub="Used to compute your daily calorie recommendation (Mifflin-St Jeor)."
         />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={`Height (${lengthUnit(goals.units)})`}>
+          <Field label={`Height (${lengthUnit(draftUnits)})`}>
             <TextInput
               type="number"
               min={0}
@@ -285,7 +295,7 @@ export default function Settings() {
               ))}
             </Select>
           </Field>
-          <Field label={`Pace (${weightUnit(goals.units)}/week)`}>
+          <Field label={`Pace (${weightUnit(draftUnits)}/week)`}>
             <TextInput
               type="number"
               min={0}
@@ -324,9 +334,9 @@ export default function Settings() {
               </div>
               <p className="text-xs text-muted">
                 {rec.direction === 'lose'
-                  ? `${Math.abs(rec.dailyDelta).toLocaleString('en-US')} kcal/day deficit to lose ~${paceDisplay} ${weightUnit(goals.units)}/week`
+                  ? `${Math.abs(rec.dailyDelta).toLocaleString('en-US')} kcal/day deficit to lose ~${paceDisplay} ${weightUnit(draftUnits)}/week`
                   : rec.direction === 'gain'
-                    ? `${rec.dailyDelta.toLocaleString('en-US')} kcal/day surplus to gain ~${paceDisplay} ${weightUnit(goals.units)}/week`
+                    ? `${rec.dailyDelta.toLocaleString('en-US')} kcal/day surplus to gain ~${paceDisplay} ${weightUnit(draftUnits)}/week`
                     : 'Maintenance — no target weight set or already at goal'}
               </p>
               <p className="text-xs text-muted">
@@ -398,4 +408,14 @@ export default function Settings() {
       </section>
     </div>
   );
+}
+
+/**
+ * Drafts are seeded from the store once per mount, so remount the whole view
+ * whenever the dataset is replaced wholesale (import / sample / reset) —
+ * otherwise stale drafts would mask, and on save silently revert, new data.
+ */
+export default function Settings() {
+  const dataVersion = useAppStore((s) => s.dataVersion);
+  return <SettingsView key={dataVersion} />;
 }

@@ -21,7 +21,8 @@ export function Meter({ value, max, overIsBad = false, label, className = '' }: 
       role="meter"
       aria-valuemin={0}
       aria-valuemax={Math.round(max)}
-      aria-valuenow={Math.round(Math.min(value, max * 2))}
+      aria-valuenow={Math.round(Math.min(value, max))}
+      aria-valuetext={`${Math.round(value)} of ${Math.round(max)}`}
       aria-label={label}
       className={`h-2 w-full overflow-hidden rounded-full bg-accent-soft ${className}`}
     >
