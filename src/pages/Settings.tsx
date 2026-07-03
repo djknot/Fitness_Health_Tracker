@@ -57,9 +57,6 @@ function listJoin(items: string[]): string {
 }
 
 function SettingsView() {
-  const workouts = useAppStore((s) => s.workouts);
-  const foods = useAppStore((s) => s.foods);
-  const waterByDate = useAppStore((s) => s.waterByDate);
   const metrics = useAppStore((s) => s.metrics);
   const goals = useAppStore((s) => s.goals);
   const profile = useAppStore((s) => s.profile);
@@ -160,7 +157,7 @@ function SettingsView() {
   const exportBackup = () => {
     downloadTextFile(
       `fittrack-backup-${todayISO()}.json`,
-      serializeBackup({ workouts, foods, waterByDate, metrics, goals, profile }),
+      serializeBackup(useAppStore.getState()),
     );
   };
 

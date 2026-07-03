@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAppStore } from '../store/useAppStore';
 
 /**
  * Chart colors resolved in JS: SVG presentation attributes can't reliably
@@ -63,6 +64,13 @@ export function usePrefersDark(): boolean {
   return dark;
 }
 
+/** Effective dark-mode flag: manual preference wins, 'system' follows the OS. */
+export function useIsDark(): boolean {
+  const pref = useAppStore((s) => s.prefs.theme);
+  const systemDark = usePrefersDark();
+  return pref === 'dark' || (pref === 'system' && systemDark);
+}
+
 export function useChartTheme(): ChartTheme {
-  return usePrefersDark() ? DARK_CHART : LIGHT_CHART;
+  return useIsDark() ? DARK_CHART : LIGHT_CHART;
 }

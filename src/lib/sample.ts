@@ -100,8 +100,14 @@ export function sampleData(today: string): AppData {
         date,
         weightKg: round1(82.4 - dayIndex * 0.055 + Math.sin(dayIndex * 1.7) * 0.35),
         sleepHours: round1(Math.min(9, Math.max(5.5, 7.2 + Math.sin(dayIndex * 0.9) * 1.1))),
+        mood: Math.max(2, Math.min(5, Math.round(3.6 + Math.sin(dayIndex * 0.8)))),
         ...(dayIndex % 7 === 0
-          ? { waistCm: round1(88 - dayIndex * 0.04), bodyFatPct: round1(21.5 - dayIndex * 0.03) }
+          ? {
+              waistCm: round1(88 - dayIndex * 0.04),
+              bodyFatPct: round1(21.5 - dayIndex * 0.03),
+              chestCm: round1(102 - dayIndex * 0.02),
+              hipsCm: round1(99 - dayIndex * 0.03),
+            }
           : {}),
       });
     }
@@ -128,11 +134,65 @@ export function sampleData(today: string): AppData {
     waterByDate[date] = isToday ? 1000 : 1750 + ((dayIndex * 37) % 5) * 250;
   }
 
+  // A couple of finished 16-h fasts on recent evenings.
+  const fastDay1 = addDays(today, -2);
+  const fastDay2 = addDays(today, -5);
+  const fasts = [
+    { id: uid(), start: `${addDays(fastDay1, -1)}T20:00:00.000Z`, end: `${fastDay1}T12:10:00.000Z` },
+    { id: uid(), start: `${addDays(fastDay2, -1)}T19:30:00.000Z`, end: `${fastDay2}T11:45:00.000Z` },
+  ];
+
+  const templates = [
+    {
+      id: uid(),
+      name: 'Push day',
+      exercises: STRENGTH_TEMPLATES[0].exercises.map((ex) => ({
+        ...ex,
+        id: uid(),
+        sets: ex.sets.map((s) => ({ ...s })),
+      })),
+    },
+  ];
+
+  const customFoods = [
+    {
+      id: uid(),
+      name: 'Homemade protein oats',
+      per100g: { kcal: 145, proteinG: 9, carbsG: 19, fatG: 3.5 },
+      servingG: 300,
+      servingLabel: '1 bowl',
+      source: 'custom' as const,
+    },
+  ];
+
+  const favoriteFoods = [
+    { id: uid(), name: 'Greek yogurt & granola', calories: 350, proteinG: 20, carbsG: 45, fatG: 10 },
+    { id: uid(), name: 'Protein shake', calories: 180, proteinG: 30, carbsG: 8, fatG: 3 },
+  ];
+  const recentFoods = foods.slice(-6).map((f) => ({
+    id: uid(),
+    name: f.name,
+    calories: f.calories,
+    proteinG: f.proteinG,
+    carbsG: f.carbsG,
+    fatG: f.fatG,
+  }));
+
   return {
     workouts,
     foods,
     metrics,
     waterByDate,
+    fasts,
+    templates,
+    customFoods,
+    favoriteFoods,
+    recentFoods,
+    prefs: {
+      theme: 'system',
+      earnBackExercise: true,
+      adaptiveTdee: false,
+    },
     goals: {
       units: 'metric',
       dailyCalories: 2200,

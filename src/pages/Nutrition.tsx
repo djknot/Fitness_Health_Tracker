@@ -43,7 +43,7 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
     const ctrl = new AbortController();
     const t = setTimeout(() => {
       setSearching(true);
-      searchFoods(name.trim(), ctrl.signal)
+      searchFoods(name.trim(), { signal: ctrl.signal })
         .then((r) => {
           setResults(r.results);
           setRemoteError(r.remoteError);

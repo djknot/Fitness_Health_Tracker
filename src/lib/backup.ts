@@ -1,5 +1,5 @@
 import type { AppData } from '../types';
-import { DEFAULT_GOALS, DEFAULT_PROFILE } from './defaults';
+import { DEFAULT_GOALS, DEFAULT_PREFS, DEFAULT_PROFILE } from './defaults';
 
 export function serializeBackup(data: AppData): string {
   return JSON.stringify(
@@ -10,15 +10,23 @@ export function serializeBackup(data: AppData): string {
       foods: data.foods,
       waterByDate: data.waterByDate,
       metrics: data.metrics,
+      fasts: data.fasts,
+      templates: data.templates,
+      customFoods: data.customFoods,
+      favoriteFoods: data.favoriteFoods,
+      recentFoods: data.recentFoods,
       goals: data.goals,
       profile: data.profile,
+      prefs: data.prefs,
     },
     null,
     2,
   );
 }
 
-/** Parse and minimally validate a backup file; throws with a friendly message. */
+const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+
+/** Parse and minimally validate a backup file (v0.1 backups load fine); throws with a friendly message. */
 export function parseBackup(text: string): AppData {
   let raw: unknown;
   try {
@@ -36,8 +44,14 @@ export function parseBackup(text: string): AppData {
     metrics: obj.metrics,
     waterByDate:
       obj.waterByDate && typeof obj.waterByDate === 'object' ? { ...obj.waterByDate } : {},
+    fasts: arr(obj.fasts),
+    templates: arr(obj.templates),
+    customFoods: arr(obj.customFoods),
+    favoriteFoods: arr(obj.favoriteFoods),
+    recentFoods: arr(obj.recentFoods),
     goals: { ...DEFAULT_GOALS, ...(obj.goals ?? {}) },
     profile: { ...DEFAULT_PROFILE, ...(obj.profile ?? {}) },
+    prefs: { ...DEFAULT_PREFS, ...(obj.prefs ?? {}) },
   };
 }
 

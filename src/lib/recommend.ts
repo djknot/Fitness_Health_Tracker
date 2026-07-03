@@ -1,4 +1,7 @@
 import type { ActivityLevel, AppData, Profile, Sex } from '../types';
+import { computeAdaptiveTdee, type AdaptiveTdee } from './adaptive';
+import { dayBurnKcal } from './burn';
+import { todayISO } from './dates';
 import { latestWeight } from './stats';
 
 export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
@@ -47,22 +50,17 @@ export interface Recommendation {
  * Returns null when the profile is incomplete (needs height, age, sex)
  * or there is no current weight to work from.
  */
-export function recommend(
-  profile: Profile,
-  currentWeightKg: number | undefined,
+/** Goal-adjusted target from a TDEE (shared by the formula and adaptive paths). */
+export function targetsFromTdee(
+  tdee: number,
+  currentWeightKg: number,
   targetWeightKg: number | undefined,
-): Recommendation | null {
-  const { heightCm, age, sex, activityLevel } = profile;
-  if (currentWeightKg == null || currentWeightKg <= 0) return null;
-  if (heightCm == null || heightCm <= 0 || age == null || age <= 0 || sex == null) return null;
-
-  const bmr = mifflinStJeorBmr(currentWeightKg, heightCm, age, sex);
-  const tdee = Math.round(bmr * ACTIVITY_FACTORS[activityLevel]);
-
+  weeklyRateKg: number,
+): Pick<Recommendation, 'targetCalories' | 'dailyDelta' | 'direction' | 'flooredAt' | 'macros'> {
   const diff = targetWeightKg != null ? targetWeightKg - currentWeightKg : 0;
   const direction: Recommendation['direction'] =
     targetWeightKg == null || Math.abs(diff) < 0.75 ? 'maintain' : diff < 0 ? 'lose' : 'gain';
-  const rate = Math.min(Math.abs(profile.weeklyRateKg) || 0.5, MAX_WEEKLY_RATE_KG);
+  const rate = Math.min(Math.abs(weeklyRateKg) || 0.5, MAX_WEEKLY_RATE_KG);
   const dailyDelta =
     direction === 'maintain'
       ? 0
@@ -79,7 +77,21 @@ export function recommend(
   const fatG = Math.round((0.275 * targetCalories) / 9);
   const carbsG = Math.max(0, Math.round((targetCalories - proteinG * 4 - fatG * 9) / 4));
 
-  return { bmr, tdee, targetCalories, dailyDelta, direction, flooredAt, macros: { proteinG, carbsG, fatG } };
+  return { targetCalories, dailyDelta, direction, flooredAt, macros: { proteinG, carbsG, fatG } };
+}
+
+export function recommend(
+  profile: Profile,
+  currentWeightKg: number | undefined,
+  targetWeightKg: number | undefined,
+): Recommendation | null {
+  const { heightCm, age, sex, activityLevel } = profile;
+  if (currentWeightKg == null || currentWeightKg <= 0) return null;
+  if (heightCm == null || heightCm <= 0 || age == null || age <= 0 || sex == null) return null;
+
+  const bmr = mifflinStJeorBmr(currentWeightKg, heightCm, age, sex);
+  const tdee = Math.round(bmr * ACTIVITY_FACTORS[activityLevel]);
+  return { bmr, tdee, ...targetsFromTdee(tdee, currentWeightKg, targetWeightKg, profile.weeklyRateKg) };
 }
 
 export interface CalorieTargetInfo {
@@ -100,4 +112,57 @@ export function calorieTargetInfo(
     return { target: rec.targetCalories, source: 'recommended', recommendation: rec };
   }
   return { target: data.goals.dailyCalories, source: 'manual', recommendation: rec };
+}
+
+export interface DailyTargetInfo {
+  date: string;
+  /** Target before exercise adjustment. */
+  baseTarget: number;
+  /** Estimated exercise burn added to the target (0 when earn-back is off). */
+  burnKcal: number;
+  /** What the app tracks the day's intake against: baseTarget + burnKcal. */
+  target: number;
+  source: 'manual' | 'recommended' | 'recommended-adaptive';
+  recommendation: Recommendation | null;
+  /** Present when adaptive TDEE is on and computable. */
+  adaptive: AdaptiveTdee | null;
+}
+
+/**
+ * The full v0.2 target pipeline for one date:
+ * formula recommendation → optional adaptive-TDEE recalibration → optional
+ * exercise earn-back for that date's workouts.
+ */
+export function dailyTargetInfo(
+  data: Pick<AppData, 'goals' | 'profile' | 'prefs' | 'metrics' | 'foods' | 'workouts'>,
+  date: string,
+  today = todayISO(),
+): DailyTargetInfo {
+  const currentWeightKg = latestWeight(data.metrics)?.weightKg;
+  const rec = recommend(data.profile, currentWeightKg, data.goals.targetWeightKg);
+  const adaptive =
+    data.prefs.adaptiveTdee && rec ? computeAdaptiveTdee(data, today, rec.tdee) : null;
+
+  let baseTarget = data.goals.dailyCalories;
+  let source: DailyTargetInfo['source'] = 'manual';
+  if (data.profile.useRecommendedTarget && rec && currentWeightKg != null) {
+    if (adaptive) {
+      baseTarget = targetsFromTdee(
+        adaptive.observedTdee,
+        currentWeightKg,
+        data.goals.targetWeightKg,
+        data.profile.weeklyRateKg,
+      ).targetCalories;
+      source = 'recommended-adaptive';
+    } else {
+      baseTarget = rec.targetCalories;
+      source = 'recommended';
+    }
+  }
+
+  const burnKcal = data.prefs.earnBackExercise
+    ? Math.round(dayBurnKcal(data.workouts, date, currentWeightKg ?? 70))
+    : 0;
+
+  return { date, baseTarget, burnKcal, target: baseTarget + burnKcal, source, recommendation: rec, adaptive };
 }

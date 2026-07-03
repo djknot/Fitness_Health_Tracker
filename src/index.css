@@ -41,6 +41,42 @@
   }
 }
 
+/* Manual theme override: Settings stamps data-theme on <html>; these must win
+   over the media query in BOTH directions, so they come after it. */
+:root[data-theme='light'] {
+  --app-page: #f9f9f7;
+  --app-surface: #fcfcfb;
+  --app-ink: #0b0b0b;
+  --app-ink2: #52514e;
+  --app-muted: #898781;
+  --app-line: #e1e0d9;
+  --app-edge: rgba(11, 11, 11, 0.1);
+  --app-accent: #2a78d6;
+  --app-accent-strong: #256abf;
+  --app-accent-soft: #cde2fb;
+  --app-accent-wash: rgba(42, 120, 214, 0.1);
+  --app-good: #006300;
+  --app-warning: #fab219;
+  --app-bad: #d03b3b;
+}
+
+:root[data-theme='dark'] {
+  --app-page: #0d0d0d;
+  --app-surface: #1a1a19;
+  --app-ink: #ffffff;
+  --app-ink2: #c3c2b7;
+  --app-muted: #898781;
+  --app-line: #2c2c2a;
+  --app-edge: rgba(255, 255, 255, 0.1);
+  --app-accent: #3987e5;
+  --app-accent-strong: #5598e7;
+  --app-accent-soft: #0d366b;
+  --app-accent-wash: rgba(57, 135, 229, 0.16);
+  --app-good: #0ca30c;
+  --app-warning: #fab219;
+  --app-bad: #e66767;
+}
+
 @theme inline {
   --color-page: var(--app-page);
   --color-surface: var(--app-surface);

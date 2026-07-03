@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Apple, Dumbbell, HeartPulse, LayoutDashboard, Settings } from 'lucide-react';
+import { Apple, BarChart3, Dumbbell, HeartPulse, LayoutDashboard, Settings } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const NAV: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
@@ -7,6 +7,7 @@ const NAV: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: '/workouts', label: 'Workouts', icon: Dumbbell },
   { to: '/nutrition', label: 'Nutrition', icon: Apple },
   { to: '/metrics', label: 'Metrics', icon: HeartPulse },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -56,7 +57,7 @@ export default function Layout() {
         className="fixed inset-x-0 bottom-0 z-20 border-t border-edge bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Main"
       >
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}

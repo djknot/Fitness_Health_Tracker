@@ -1,13 +1,6 @@
-export interface FoodRecord {
-  name: string;
-  brand?: string;
-  /** kcal & macro grams per 100 g (100 ml for liquids). */
-  per100g: { kcal: number; proteinG: number; carbsG: number; fatG: number };
-  /** Typical serving in grams — used as the default quantity. */
-  servingG?: number;
-  servingLabel?: string;
-  source: 'local' | 'off';
-}
+import type { FoodRecord } from '../types';
+
+export type { FoodRecord };
 
 const F = (
   name: string,
@@ -131,11 +124,11 @@ export const LOCAL_FOODS: FoodRecord[] = [
   F('Ranch dressing', 430, 1.3, 7, 45, 30, '2 tbsp'),
 ];
 
-/** Case-insensitive multi-token substring search over the local database. */
-export function searchLocalFoods(query: string, limit = 6): FoodRecord[] {
+/** Case-insensitive multi-token substring search over any record list. */
+export function searchRecords<T extends FoodRecord>(records: T[], query: string, limit = 6): T[] {
   const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return [];
-  const matches = LOCAL_FOODS.filter((food) => {
+  const matches = records.filter((food) => {
     const haystack = `${food.name} ${food.brand ?? ''}`.toLowerCase();
     return tokens.every((t) => haystack.includes(t));
   });
@@ -145,4 +138,9 @@ export function searchLocalFoods(query: string, limit = 6): FoodRecord[] {
     return aStarts - bStarts || a.name.length - b.name.length;
   });
   return matches.slice(0, limit);
+}
+
+/** Case-insensitive multi-token substring search over the built-in database. */
+export function searchLocalFoods(query: string, limit = 6): FoodRecord[] {
+  return searchRecords(LOCAL_FOODS, query, limit);
 }
