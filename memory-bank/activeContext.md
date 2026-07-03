@@ -1,25 +1,26 @@
 # Active Context
 
 ## Active branch
-`claude/fitness-health-tracking-app-f7yhxv` — checkpoint commit `1365453` (foundation)
-pushed; final commit with pages/tests/README pending review results.
+`claude/fitness-health-tracking-app-f7yhxv` (repo default branch). Publishing branch:
+`gh-pages` (CI-managed, force-pushed builds only — never edit by hand).
 
 ## Current focus
-Closing out FitTrack v0.1: adversarial review workflow (wf_dbabaf61-d81) is validating
-the agent-built pages before the final commit.
+None — FitTrack v0.1 is complete, reviewed, and **live in production**:
+https://djknot.github.io/Fitness_Health_Tracker/
 
 ## State right now
-- App is fully functional and verified: tsc strict clean, 57/57 unit tests, production
-  build green, Playwright e2e pass (all flows + persistence), light/dark/mobile
-  screenshots visually reviewed.
-- Feature-complete for v0.1 including mid-session additions: food/brand/quantity
-  nutrition lookup (local DB + Open Food Facts) and recommended daily intake
-  (Mifflin-St Jeor; `calorieTargetInfo` drives Dashboard + Nutrition tracking).
+- App deployed via GitHub Pages (Source: Deploy from a branch → gh-pages / root).
+- CI on every push to the default branch: npm ci → tests (57) → build → force-push
+  dist/ to gh-pages → GitHub's "pages build and deployment" publishes (verified green,
+  run 28645191274).
+- Repo is public (required for free-plan Pages); user's tracked data stays in-browser.
+- All quality gates passed this session: tsc strict, 57/57 unit tests, production build,
+  Playwright e2e (light/dark/mobile), 34-agent adversarial review → 6 bugs fixed.
 
-## Next immediate steps
-1. Apply confirmed findings from the review workflow.
-2. Re-run tests/build if code changed; re-verify affected flows.
-3. Final commit (conventional message, memory-bank updates paired) and push.
+## Next immediate steps (when work resumes)
+Pick from the backlog in progress.md — top candidates: service worker for offline
+app-shell, edit-in-place for logged entries, recharts code-splitting, barcode scanning.
 
 ## Active obstacles
-None.
+None. (Note for future sessions: actions/deploy-pages API rejects this site — see
+decisionLog 2026-07-03; keep the gh-pages branch mechanism.)

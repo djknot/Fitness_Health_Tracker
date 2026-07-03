@@ -2,8 +2,10 @@
 
 ## Milestones
 - [x] **M0 — Scope agreed** (2026-07-03): local-first web PWA; workouts + nutrition + metrics + dashboard.
-- [ ] **M1 — v0.1 scaffold & core app** (in progress): all five pages functional, tests green, pushed.
-- [ ] **M2 — Polish pass**: PWA service worker/offline, edit-in-place for entries, richer exercise library.
+- [x] **M1 — v0.1 shipped** (2026-07-03): all five pages + food lookup + intake
+  recommendation, 57 tests green, adversarial review fixes applied, **deployed to
+  https://djknot.github.io/Fitness_Health_Tracker/** (gh-pages branch, CI-automated).
+- [ ] **M2 — Polish pass**: PWA service worker/offline, edit-in-place for entries, richer exercise library, recharts code-splitting.
 - [ ] **M3 — Optional sync**: account/backend or file-sync story (only if requested).
 
 ## Built (this session, 2026-07-03)
