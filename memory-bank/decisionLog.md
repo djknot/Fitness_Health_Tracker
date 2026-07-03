@@ -2,6 +2,15 @@
 
 Newest first. Format: date — decision — rationale/tradeoff.
 
+## 2026-07-03 — Pages publish mechanism: gh-pages branch (deploy-pages API abandoned)
+actions/deploy-pages@v4 rejected every deployment for this site within ~5 s
+("Deployment failed, try again later") across five attempts spanning 20+ minutes —
+with the repo public, Pages enabled with Source=GitHub Actions, email verified, and
+artifact/build green. Root cause opaque (Pages backend). Pivoted to the classic route:
+CI builds and force-pushes `dist/` to the `gh-pages` branch (plain git in the workflow,
+`contents: write`, no third-party action); Pages serves that branch via GitHub's own
+"pages build and deployment" pipeline. `.nojekyll` included. Same URL, same automation.
+
 ## 2026-07-03 — Hosting: GitHub Pages via Actions from the working branch
 Static local-first app → free Pages hosting fits perfectly; localStorage is per-origin
 so users keep their data across deploys. Vite `base: '/Fitness_Health_Tracker/'`,
