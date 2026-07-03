@@ -9,7 +9,7 @@ const MET_BY_KEYWORD: [string, number][] = [
   ['jog', 7.0],
   ['cycl', 7.5],
   ['bik', 7.5],
-  ['row', 7.0],
+  ['rowing', 7.0], // 'rowing' not 'row' — else strength "Barbell Row" gets the cardio MET
   ['swim', 8.0],
   ['walk', 3.5],
   ['hik', 6.0],

@@ -2,6 +2,24 @@
 
 Newest first. Format: date — decision — rationale/tradeoff.
 
+## 2026-07-03 — Numeric entry validation: `step="any"` + native min/max (not noValidate)
+v0.2 edit-in-place seeds inputs from stored values; some (e.g. sleep 6.4 h against
+`step=0.25`) aren't step-multiples, so native constraint validation raised a
+stepMismatch and the form silently refused to submit — the metrics row editor was
+unsavable (caught by e2e). First patch added `noValidate`, but that ALSO disabled
+`min`/`max`, letting negative weight / sleep>24 persist (found in the review round).
+Resolution: `step="any"` on every numeric input (accepts any decimal → no
+stepMismatch) while KEEPING `min`/`max` and dropping `noValidate`, so the browser
+enforces ranges on submit. Pattern for all data-entry forms. (Nutrition keeps its
+JS-only validation — its number inputs carry no native min/max/step.)
+
+## 2026-07-03 — Burn MET keyword is `'rowing'`, not `'row'`
+`metFor` substring-matches exercise names to MET values. `'row'` swallowed strength
+"Barbell Row"/"Dumbbell Row" into the cardio rowing-machine MET (7.0) vs the strength
+default (4.0). Narrowed to `'rowing'`: a cardio "Row" now falls to the cardio default
+(6.0, close enough) while strength rows read correctly. Burn is an estimate; the
+relative error on a strength row was the larger of the two.
+
 ## 2026-07-03 — Pages publish mechanism: gh-pages branch (deploy-pages API abandoned)
 actions/deploy-pages@v4 rejected every deployment for this site within ~5 s
 ("Deployment failed, try again later") across five attempts spanning 20+ minutes —

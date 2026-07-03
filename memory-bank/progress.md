@@ -46,6 +46,50 @@
 - [x] Pushed to `claude/fitness-health-tracking-app-f7yhxv` (foundation `1365453`,
   features `d30c355`, review fixes follow).
 
+## Built (v0.2 session, 2026-07-03) — branch claude/v0.2-memory-dynamic-workflows-qp37oq
+- Foundation (commit 2a30524): types v2, store v2 (persist v2 + migrate), libs
+  burn/adaptive/usda/fasting/quickfoods, searchFoods opts, lookupBarcode,
+  dailyTargetInfo pipeline, theme plumbing, /reports route.
+- Pages via 6-agent workflow (disjoint file ownership, frozen contracts):
+  - Nutrition: favorites/recents one-tap chips, star-to-favorite on rows, barcode
+    scanner modal (camera + always-available manual path), fasting card, edit-in-place
+    rows, source tags (custom/USDA), burn-aware daily target.
+  - Workouts: builder extracted to WorkoutBuilder, templates (save from draft or row,
+    start-from-template with dirty-draft confirm), optional strength duration, burn
+    chips, edit-in-place.
+  - Metrics: chest/hips/arm/thigh in a "More measurements" disclosure, MoodPicker
+    (1–5 radiogroup), BMI card, chip-style history rows with inline editor.
+  - Dashboard: dailyTargetInfo meter (+earned-back note, adaptive chip), daily
+    check-in card (merged today-entry detection, patch-or-add save).
+  - Reports: range picker (4W–1Y), 8 summary tiles, weekly trend charts with
+    reference lines, calorie adherence bar, consistency heatmap; pure lib/reports.ts.
+  - Settings: theme select, USDA key manager, earn-back + adaptive switches with
+    status panel (observed vs formula TDEE), custom-foods CRUD, About v0.2.
+- Integration fixes (orchestrator): IconButton variant prop; noValidate on numeric
+  entry forms (native stepMismatch silently blocked editor saves — e2e-caught bug);
+  Metrics date onChange guard.
+- Tests 57 → 137 green (burn, adaptive, fasting, quickfoods, usda mapping, reports,
+  targetsFromTdee + dailyTargetInfo). Build green. Playwright e2e 43/43 with
+  light/dark/mobile + dark-heatmap screenshots reviewed.
+
+## Review round (v0.2, completed) — branch claude/v0.2-memory-dynamic-workflows-qp37oq
+- Adversarial Find workflow (5 lenses over the v0.2 diff). The 3-vote Verify phase
+  was cut short by model-credit limits, so findings were verified on Opus by hand.
+- 6 fixes applied + re-verified (tsc/tests/build/e2e): (1) restored native range
+  validation on Metrics/CheckinCard (step="any" + drop noValidate — the noValidate
+  had disabled min/max); (2) Dashboard 7-day chart references baseTarget not the
+  earn-back target; (3) burn MET 'row'→'rowing' (strength rows no longer read as the
+  rowing machine) + test; (4) heatmap dark-mode cells bordered, ramp strengthened;
+  (5) barcode focus-restore + aria-live status; (6) Workouts dirty-draft discard
+  confirm + close-editor-on-delete-of-edited.
+- A dynamic fix-verification workflow (7 Opus skeptics) then confirmed all 6 fixes
+  correct with a 0-finding fresh sweep, and OVERTURNED the two hand-refutations —
+  both were real and were also fixed: (7) editing a custom food now clears an
+  inherited servingLabel (sample seeded '1 bowl'; the form never managed it →
+  stale label in search) and the sample no longer seeds one; (8) BarcodeScanner
+  guards the camera-detect callback against resolving after unmount (was an
+  unabortable post-close lookup that overwrote the food form).
+
 ## Known gaps / backlog
 - No service worker yet (app shell not offline-cacheable; manifest-only PWA).
 - No edit for logged entries (append/delete only).

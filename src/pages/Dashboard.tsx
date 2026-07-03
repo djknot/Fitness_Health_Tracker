@@ -15,12 +15,13 @@ import {
   workoutsInWeekOf,
   workoutVolumeKg,
 } from '../lib/stats';
-import { calorieTargetInfo } from '../lib/recommend';
+import { dailyTargetInfo } from '../lib/recommend';
 import { formatWeight, kgToDisplay, weightUnit } from '../lib/units';
 import { sampleData } from '../lib/sample';
 import { Button, CardTitle, PageHeader } from '../components/ui';
 import { Meter } from '../components/Meter';
 import { StatCard } from '../components/StatCard';
+import { CheckinCard } from '../components/checkin/CheckinCard';
 import { WeightChart } from '../components/WeightChart';
 import { CaloriesChart } from '../components/CaloriesChart';
 
@@ -39,6 +40,8 @@ export default function Dashboard() {
   const metrics = useAppStore((s) => s.metrics);
   const goals = useAppStore((s) => s.goals);
   const profile = useAppStore((s) => s.profile);
+  const prefs = useAppStore((s) => s.prefs);
+  const dataVersion = useAppStore((s) => s.dataVersion);
   const replaceAll = useAppStore((s) => s.replaceAll);
 
   const today = todayISO();
@@ -69,7 +72,7 @@ export default function Dashboard() {
   }
 
   const day = nutritionOn(foods, today);
-  const targetInfo = calorieTargetInfo({ goals, profile, metrics });
+  const targetInfo = dailyTargetInfo({ goals, profile, prefs, metrics, foods, workouts }, today);
   const weekCount = workoutsInWeekOf(workouts, today).length;
   const streak = logStreak(loggedDates({ workouts, foods, metrics, waterByDate }), today);
   const water = waterByDate[today] ?? 0;
@@ -109,15 +112,37 @@ export default function Dashboard() {
     <div className="flex flex-col gap-4 sm:gap-5">
       <PageHeader title={greeting()} sub={formatLong(today)} />
 
+      <CheckinCard key={dataVersion} />
+
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           icon={Utensils}
           label="Calories today"
           value={day.calories.toLocaleString('en-US')}
           sub={`of ${targetInfo.target.toLocaleString('en-US')} kcal ${
-            targetInfo.source === 'recommended' ? 'recommended' : 'target'
+            targetInfo.source === 'manual' ? 'target' : 'recommended'
           }`}
         >
+          {(targetInfo.burnKcal > 0 || targetInfo.source === 'recommended-adaptive') && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {targetInfo.burnKcal > 0 && (
+                <span
+                  className="text-xs font-medium text-ink2"
+                  title={`Estimated ${targetInfo.burnKcal.toLocaleString('en-US')} kcal burned in today's workouts, added to your ${targetInfo.baseTarget.toLocaleString('en-US')} kcal base target.`}
+                >
+                  +{targetInfo.burnKcal.toLocaleString('en-US')} earned back
+                </span>
+              )}
+              {targetInfo.source === 'recommended-adaptive' && (
+                <span
+                  className="chip bg-accent-wash px-2 py-0.5 text-accent"
+                  title="Target recalibrated from your logged intake and actual weight trend over the last 4 weeks."
+                >
+                  adaptive
+                </span>
+              )}
+            </div>
+          )}
           <Meter
             value={day.calories}
             max={targetInfo.target}
@@ -165,11 +190,13 @@ export default function Dashboard() {
           />
         </section>
         <section className="card">
+          {/* Reference line = base target (before today's earn-back), so it reads
+              sensibly across all 7 days rather than being inflated by today's workout. */}
           <CardTitle
             title="Calories"
-            sub={`Last 7 days · target ${targetInfo.target.toLocaleString('en-US')} kcal`}
+            sub={`Last 7 days · target ${targetInfo.baseTarget.toLocaleString('en-US')} kcal`}
           />
-          <CaloriesChart data={caloriesSeries(foods, today, 7)} target={targetInfo.target} />
+          <CaloriesChart data={caloriesSeries(foods, today, 7)} target={targetInfo.baseTarget} />
         </section>
       </div>
 
