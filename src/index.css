@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/*
+ * Semantic design tokens (light + dark via prefers-color-scheme).
+ * Values follow the validated dataviz reference palette; see
+ * memory-bank/systemPatterns.md before changing.
+ */
+:root {
+  --app-page: #f9f9f7;
+  --app-surface: #fcfcfb;
+  --app-ink: #0b0b0b;
+  --app-ink2: #52514e;
+  --app-muted: #898781;
+  --app-line: #e1e0d9;
+  --app-edge: rgba(11, 11, 11, 0.1);
+  --app-accent: #2a78d6;
+  --app-accent-strong: #256abf;
+  --app-accent-soft: #cde2fb;
+  --app-accent-wash: rgba(42, 120, 214, 0.1);
+  --app-good: #006300;
+  --app-warning: #fab219;
+  --app-bad: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-page: #0d0d0d;
+    --app-surface: #1a1a19;
+    --app-ink: #ffffff;
+    --app-ink2: #c3c2b7;
+    --app-muted: #898781;
+    --app-line: #2c2c2a;
+    --app-edge: rgba(255, 255, 255, 0.1);
+    --app-accent: #3987e5;
+    --app-accent-strong: #5598e7;
+    --app-accent-soft: #0d366b;
+    --app-accent-wash: rgba(57, 135, 229, 0.16);
+    --app-good: #0ca30c;
+    --app-warning: #fab219;
+    --app-bad: #e66767;
+  }
+}
+
+@theme inline {
+  --color-page: var(--app-page);
+  --color-surface: var(--app-surface);
+  --color-ink: var(--app-ink);
+  --color-ink2: var(--app-ink2);
+  --color-muted: var(--app-muted);
+  --color-line: var(--app-line);
+  --color-edge: var(--app-edge);
+  --color-accent: var(--app-accent);
+  --color-accent-strong: var(--app-accent-strong);
+  --color-accent-soft: var(--app-accent-soft);
+  --color-accent-wash: var(--app-accent-wash);
+  --color-good: var(--app-good);
+  --color-warning: var(--app-warning);
+  --color-bad: var(--app-bad);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-color: var(--app-page);
+    color: var(--app-ink);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-edge bg-surface p-4 shadow-sm sm:p-5;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-strong;
+  }
+  .btn-ghost {
+    @apply text-ink2 hover:bg-accent-wash hover:text-ink;
+  }
+  .btn-danger {
+    @apply text-bad hover:bg-bad/10;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-2 focus:-outline-offset-1 focus:outline-accent;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-ink2;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}

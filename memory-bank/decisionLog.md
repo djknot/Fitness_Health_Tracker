@@ -1,0 +1,57 @@
+# Decision Log
+
+Newest first. Format: date — decision — rationale/tradeoff.
+
+## 2026-07-03 — Food lookup: bundled local DB + Open Food Facts (no API key)
+User asked for nutrition lookup by food/brand/quantity. Hybrid in `lib/foodDb.ts` +
+`lib/foodSearch.ts`: ~95 curated generic foods per-100g work offline/instantly; branded
+products come from the free, CORS-enabled Open Food Facts search API (no key, no signup).
+Quantity in grams scales per-100g values (`computeNutrition`). Degrades gracefully to
+local-only when offline (`remoteError` flag). Tradeoff: food-name search terms do leave
+the device when online lookup fires — disclosed in Settings→About. USDA FDC rejected
+(needs API key); fully-bundled big DB rejected (bundle size).
+
+## 2026-07-03 — Recommended intake: Mifflin-St Jeor BMR × activity − goal pace
+User asked for recommended daily calories from current state vs goal. `lib/recommend.ts`:
+BMR (Mifflin-St Jeor, needs profile height/age/sex) × activity factor (1.2–1.9) = TDEE;
+daily delta = 7,700 kcal/kg × weekly pace ÷ 7, signed by target-vs-current weight
+(latest logged weigh-in = "current state"); pace capped at 1 kg/week; 1,200 kcal safety
+floor; macros protein 1.8 g/kg (≤35% kcal), fat 27.5% kcal, carbs remainder.
+`calorieTargetInfo()` returns the effective target the whole app tracks against —
+recommended when `profile.useRecommendedTarget` and computable, else the manual goal.
+Explicit "estimates only, not medical advice" copy in Settings.
+
+## 2026-07-03 — v1 platform: local-first React SPA (PWA), no backend
+User chose "Web app" over full-stack or React Native. Fastest path to a usable tracker;
+zero infra; health data stays on-device. Tradeoff: no cross-device sync (revisit at M3).
+
+## 2026-07-03 — Persistence: localStorage via zustand/persist (not IndexedDB)
+Dataset is small structured JSON (years of entries ≪ 5 MB). `persist` gives
+hydration + versioned migrations for free. Revisit if media (photos) or bulk history arrives.
+
+## 2026-07-03 — Canonical metric storage; convert only at display edge
+kg/cm/ml + local-ISO date strings in the store; `lib/units.ts` converts for imperial display.
+Prevents drift/rounding corruption when the user flips units.
+
+## 2026-07-03 — Recharts 3 (not 2.x)
+React 19 removed `defaultProps` for function components, which breaks recharts 2.x axes.
+recharts ^3 is the React-19-compatible line (installed 3.9.1).
+
+## 2026-07-03 — Tailwind v4 CSS-first theming with semantic tokens
+`--app-*` CSS variables for light/dark (auto `prefers-color-scheme`, no manual toggle in v1),
+exposed as utilities via `@theme inline`. Charts can't reliably read CSS vars inside SVG
+attrs across browsers → `useChartTheme()` hook hands resolved hex to Recharts.
+
+## 2026-07-03 — Chart palette = validated dataviz reference palette
+Slots: blue `#2a78d6`/`#3987e5`, aqua `#1baf7a`/`#199e70`, yellow `#eda100`/`#c98500`
+(light/dark). Ran the palette validator: PASS both modes (light aqua/yellow are sub-3:1 →
+relief rule: direct labels + list/table twins accompany charts). Single-series charts use
+slot 1; macro split uses slots 1–3; status colors reserved for target semantics.
+
+## 2026-07-03 — Week starts Monday; streak = any-log days
+`workoutsInWeekOf` uses Mon–Sun; streak counts consecutive days with any logged item and
+tolerates an empty "today" (starts at yesterday) so mornings don't show a broken streak.
+
+## 2026-07-03 — No service worker in v1
+Manifest-only PWA: installable, but app shell needs network on first nav. Avoids
+stale-cache debugging during early iteration; SW is the top M2 item.
