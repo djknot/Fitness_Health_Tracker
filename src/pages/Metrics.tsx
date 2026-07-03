@@ -126,16 +126,13 @@ function MetricRowEditor({
         save();
       }}
       className="rounded-xl border border-line bg-page p-3"
-      // noValidate: stored values (e.g. sleep 6.4 h) aren't step-multiples; native
-      // stepMismatch would silently block saving. JS parsing validates instead.
-      noValidate
     >
       <p className="mb-2 text-xs font-medium text-ink2">Editing {relativeDayLabel(entry.date)}</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Field label={`Weight (${wUnit})`}>
           <TextInput
             type="number"
-            step={0.1}
+            step="any"
             min={0}
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
@@ -144,7 +141,7 @@ function MetricRowEditor({
         <Field label="Body fat %">
           <TextInput
             type="number"
-            step={0.1}
+            step="any"
             min={0}
             max={75}
             value={bodyFat}
@@ -155,7 +152,7 @@ function MetricRowEditor({
           <Field key={label} label={label}>
             <TextInput
               type="number"
-              step={0.1}
+              step="any"
               min={0}
               value={value}
               onChange={(e) => set(e.target.value)}
@@ -165,7 +162,7 @@ function MetricRowEditor({
         <Field label="Sleep (h)">
           <TextInput
             type="number"
-            step={0.25}
+            step="any"
             min={0}
             max={24}
             value={sleep}
@@ -268,7 +265,6 @@ export default function Metrics() {
             e.preventDefault();
             save();
           }}
-          noValidate
         >
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <Field label="Date">
@@ -285,7 +281,7 @@ export default function Metrics() {
             <Field label={`Weight (${wUnit})`}>
               <TextInput
                 type="number"
-                step={0.1}
+                step="any"
                 min={0}
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
@@ -294,7 +290,7 @@ export default function Metrics() {
             <Field label="Body fat %">
               <TextInput
                 type="number"
-                step={0.1}
+                step="any"
                 min={0}
                 max={75}
                 value={bodyFat}
@@ -304,7 +300,7 @@ export default function Metrics() {
             <Field label={`Waist (${lUnit})`}>
               <TextInput
                 type="number"
-                step={0.1}
+                step="any"
                 min={0}
                 value={waist}
                 onChange={(e) => setWaist(e.target.value)}
@@ -313,7 +309,7 @@ export default function Metrics() {
             <Field label="Sleep (h)">
               <TextInput
                 type="number"
-                step={0.25}
+                step="any"
                 min={0}
                 max={24}
                 value={sleep}
@@ -344,7 +340,7 @@ export default function Metrics() {
                 <Field key={k} label={`${MORE_LABELS[k]} (${lUnit})`}>
                   <TextInput
                     type="number"
-                    step={0.1}
+                    step="any"
                     min={0}
                     value={more[k]}
                     onChange={(e) => setMore((v) => ({ ...v, [k]: e.target.value }))}

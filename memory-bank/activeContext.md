@@ -12,30 +12,37 @@ templates, exercise burn, favorites/recents, daily check-in card, manual theme
 toggle, barcode scanning, USDA food DB, custom foods, Reports page, earn-back,
 self-calibrating TDEE (both toggleable in prefs). No AI features.
 
-## State right now — v0.2 pages COMPLETE (6-agent workflow + integration)
+## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components
   under components/{nutrition,workouts,checkin,reports,settings}/. Pages track
   against dailyTargetInfo (earned-back note + adaptive chip).
 - IconButton grew a `variant="neutral"` (non-destructive hover) — used by edit/
   star/template/close buttons; deletes keep the danger hover.
-- Data-entry forms carry `noValidate`: native step/min checks silently blocked
-  submits (e.g. stored sleep 6.4 vs step=0.25 made the metrics editor unsavable —
-  found by e2e). JS parsing remains the validator; Metrics date input now has the
-  same explicit onChange guard as Nutrition/Workouts.
-- tsc strict clean; 136 unit tests green (11 files); production build green
+- Review round (Find workflow: 5 lenses; Verify phase died on model-credit limits
+  so findings were verified on Opus by hand). 6 fixes applied, 2 refuted:
+  1. Metrics/CheckinCard numeric inputs → `step="any"` and `noValidate` REMOVED,
+     restoring native min/max (the earlier `noValidate` had silently dropped range
+     guards — negative weight / sleep>24 could persist). Decimals still accepted.
+  2. Dashboard 7-day calories chart reference line uses `baseTarget` (pre earn-back),
+     not the earn-back-inflated `target`.
+  3. burn.ts MET keyword `'row'`→`'rowing'` so strength "Barbell Row" gets the
+     strength default (4.0), not the cardio rowing MET (7.0). +regression test.
+  4. Heatmap dark-mode contrast: every in-range cell now bordered; ramp 0.35/0.62/1.0.
+  5. BarcodeScanner: focus restored to opener on close; lookup status is aria-live.
+  6. Workouts: header button confirms before discarding a dirty draft; deleting the
+     workout being edited now closes the stale editor (no more silent no-op save).
+  Refuted (no change): barcode detect-after-close (already aborts on unmount);
+  custom-food servingLabel (add form never sets it → nothing to go stale).
+- tsc strict clean; 137 unit tests green (11 files); production build green
   (main ~761 kB + lazy 44 kB barcode ponyfill chunk).
-- Playwright e2e vs the preview build: 41/41 steps green (sample load, chips,
-  barcode manual path incl. offline degradation, fasting, all edit-in-place flows,
-  templates, burn chips, check-in, earned-back, adaptive panel, Reports, theme
-  toggle, persistence). Screenshots (light/dark/mobile) reviewed.
+- Playwright e2e vs the preview build: 43/43 steps green (adds range-validation and
+  barcode focus-restore checks). Light/dark/mobile + dark heatmap screenshots reviewed.
 
 ## Next immediate steps
-1. Adversarial review workflow over `git diff 82fbe79 → HEAD` (foundation + pages
-   were never reviewed): multi-lens finders → dedup → 3-vote refutation panel;
-   fix confirmed findings, re-verify (tsc/tests/build + targeted e2e).
-2. Final memory-bank sync (progress/decisionLog), commit, push.
-3. NOTE: this branch does NOT auto-deploy (workflow triggers only on the default
-   branch) — merging to default publishes v0.2.
+1. Dynamic fix-verification workflow (7 Opus skeptics: one per fix + refutation
+   recheck + fresh diff sweep) is the final gate — address anything it confirms.
+2. NOTE: this branch does NOT auto-deploy (the Pages workflow triggers only on the
+   default branch) — merging to default publishes v0.2 to the live URL.
 
 ## Active obstacles
 None. Sandbox: no camera + OFF/USDA unreachable → barcode camera path and remote

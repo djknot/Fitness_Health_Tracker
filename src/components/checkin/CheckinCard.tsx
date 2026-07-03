@@ -98,14 +98,12 @@ export function CheckinCard() {
             e.preventDefault();
             save();
           }}
-          // noValidate: typed decimals (e.g. sleep 6.4 h) aren't step-multiples; JS parses.
-          noValidate
         >
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-[8rem_7rem_auto] sm:items-end">
             <Field label={`Weight (${wUnit})`}>
               <TextInput
                 type="number"
-                step={0.1}
+                step="any"
                 min={0}
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
@@ -114,7 +112,7 @@ export function CheckinCard() {
             <Field label="Sleep (h)">
               <TextInput
                 type="number"
-                step={0.25}
+                step="any"
                 min={0}
                 max={24}
                 value={sleep}

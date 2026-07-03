@@ -43,14 +43,16 @@ function WorkoutCard({
   units,
   weightKg,
   onEdit,
+  onDelete,
 }: {
   workout: Workout;
   units: Units;
   /** Latest logged body weight (kg), for the burn estimate. */
   weightKg: number;
   onEdit: () => void;
+  /** Deletion is routed through the page so it can also close an open editor. */
+  onDelete: () => void;
 }) {
-  const deleteWorkout = useAppStore((s) => s.deleteWorkout);
   const addTemplate = useAppStore((s) => s.addTemplate);
   const setCount = workoutSetCount(workout);
   const volumeKg = workoutVolumeKg(workout);
@@ -76,7 +78,7 @@ function WorkoutCard({
         <IconButton
           label="Delete workout"
           onClick={() => {
-            if (window.confirm(`Delete "${workout.name}"?`)) deleteWorkout(workout.id);
+            if (window.confirm(`Delete "${workout.name}"?`)) onDelete();
           }}
         >
           <Trash2 size={16} />
@@ -127,6 +129,7 @@ export default function Workouts() {
   const workouts = useAppStore((s) => s.workouts);
   const metrics = useAppStore((s) => s.metrics);
   const goals = useAppStore((s) => s.goals);
+  const deleteWorkout = useAppStore((s) => s.deleteWorkout);
 
   const [builder, setBuilder] = useState<{ seed: BuilderSeed; nonce: number } | null>(null);
   const nonceRef = useRef(0);
@@ -161,6 +164,12 @@ export default function Workouts() {
     openWith({ editing: w, date: w.date, name: w.name, exercises: w.exercises });
   };
 
+  /** Delete a workout; if it is the one open in the editor, close the now-stale editor. */
+  const handleDelete = (w: Workout) => {
+    deleteWorkout(w.id);
+    if (builder?.seed.editing?.id === w.id) closeBuilder();
+  };
+
   const weightKg = useMemo(() => latestWeight(metrics)?.weightKg ?? 70, [metrics]);
   const thisWeekCount = workoutsInWeekOf(workouts, todayISO()).length;
 
@@ -181,7 +190,12 @@ export default function Workouts() {
         title="Workouts"
         sub={`${thisWeekCount} of ${goals.weeklyWorkouts} workouts this week`}
         action={
-          <Button onClick={() => (builder ? closeBuilder() : openWith(emptySeed()))}>
+          <Button
+            onClick={() => {
+              if (!builder) openWith(emptySeed());
+              else if (confirmReplaceDraft('Discard the current draft?')) closeBuilder();
+            }}
+          >
             <Plus size={16} />
             Log workout
           </Button>
@@ -229,6 +243,7 @@ export default function Workouts() {
                 units={goals.units}
                 weightKg={weightKg}
                 onEdit={() => startEdit(w)}
+                onDelete={() => handleDelete(w)}
               />
             ))}
           </div>

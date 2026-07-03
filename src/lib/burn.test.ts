@@ -38,6 +38,13 @@ describe('metFor', () => {
   it('defaults unrecognised strength to 4.0', () => {
     expect(metFor({ name: 'Bench Press', kind: 'strength' })).toBe(4.0);
   });
+
+  it('does not mistake a strength "Barbell Row" for the cardio rowing machine', () => {
+    // 'rowing' keyword (7.0) must not swallow strength rows.
+    expect(metFor({ name: 'Barbell Row', kind: 'strength' })).toBe(4.0);
+    expect(metFor({ name: 'Dumbbell Row', kind: 'strength' })).toBe(4.0);
+    expect(metFor({ name: 'Rowing Machine', kind: 'cardio' })).toBe(7.0);
+  });
 });
 
 describe('exerciseBurnKcal', () => {

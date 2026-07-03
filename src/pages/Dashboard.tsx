@@ -190,11 +190,13 @@ export default function Dashboard() {
           />
         </section>
         <section className="card">
+          {/* Reference line = base target (before today's earn-back), so it reads
+              sensibly across all 7 days rather than being inflated by today's workout. */}
           <CardTitle
             title="Calories"
-            sub={`Last 7 days · target ${targetInfo.target.toLocaleString('en-US')} kcal`}
+            sub={`Last 7 days · target ${targetInfo.baseTarget.toLocaleString('en-US')} kcal`}
           />
-          <CaloriesChart data={caloriesSeries(foods, today, 7)} target={targetInfo.target} />
+          <CaloriesChart data={caloriesSeries(foods, today, 7)} target={targetInfo.baseTarget} />
         </section>
       </div>
 

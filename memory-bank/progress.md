@@ -68,9 +68,22 @@
 - Integration fixes (orchestrator): IconButton variant prop; noValidate on numeric
   entry forms (native stepMismatch silently blocked editor saves — e2e-caught bug);
   Metrics date onChange guard.
-- Tests 57 → 136 green (burn, adaptive, fasting, quickfoods, usda mapping, reports,
-  targetsFromTdee + dailyTargetInfo). Build green. Playwright e2e 41/41 with
-  light/dark/mobile screenshots reviewed.
+- Tests 57 → 137 green (burn, adaptive, fasting, quickfoods, usda mapping, reports,
+  targetsFromTdee + dailyTargetInfo). Build green. Playwright e2e 43/43 with
+  light/dark/mobile + dark-heatmap screenshots reviewed.
+
+## Review round (v0.2, completed) — branch claude/v0.2-memory-dynamic-workflows-qp37oq
+- Adversarial Find workflow (5 lenses over the v0.2 diff). The 3-vote Verify phase
+  was cut short by model-credit limits, so findings were verified on Opus by hand.
+- 6 fixes applied + re-verified (tsc/tests/build/e2e): (1) restored native range
+  validation on Metrics/CheckinCard (step="any" + drop noValidate — the noValidate
+  had disabled min/max); (2) Dashboard 7-day chart references baseTarget not the
+  earn-back target; (3) burn MET 'row'→'rowing' (strength rows no longer read as the
+  rowing machine) + test; (4) heatmap dark-mode cells bordered, ramp strengthened;
+  (5) barcode focus-restore + aria-live status; (6) Workouts dirty-draft discard
+  confirm + close-editor-on-delete-of-edited.
+- 2 findings refuted (no change): barcode detect-after-close (aborts on unmount),
+  custom-food servingLabel (never populated).
 
 ## Known gaps / backlog
 - No service worker yet (app shell not offline-cacheable; manifest-only PWA).

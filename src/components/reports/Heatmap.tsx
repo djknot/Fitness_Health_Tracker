@@ -34,9 +34,12 @@ export function Heatmap({ weeks, activeDays, totalDays }: HeatmapProps) {
   const theme = useChartTheme();
   const labels = monthLabels(weeks.map((w) => w.weekStart));
 
+  // Alphas start at 0.35 (not 0.25): on the dark surface a 0.25 fill composited to
+  // ~1.4:1 and read as an empty cell. Every in-range cell also carries a hairline
+  // border so its bounds stay visible regardless of fill strength.
   const fillFor = (count: number): CSSProperties | undefined => {
     if (count <= 0) return undefined;
-    const alpha = count === 1 ? 0.25 : count === 2 ? 0.55 : 1;
+    const alpha = count === 1 ? 0.35 : count === 2 ? 0.62 : 1;
     return { backgroundColor: withAlpha(theme.series1, alpha) };
   };
 
@@ -73,7 +76,7 @@ export function Heatmap({ weeks, activeDays, totalDays }: HeatmapProps) {
                     <div
                       key={day.date}
                       title={`${formatMedium(day.date)} — ${day.count === 1 ? '1 log' : `${day.count} logs`}`}
-                      className={`size-3 rounded-xs ${day.count === 0 ? 'border border-line bg-page' : ''}`}
+                      className={`size-3 rounded-xs border ${day.count === 0 ? 'border-line bg-page' : 'border-edge'}`}
                       style={fillFor(day.count)}
                     />
                   ) : (
@@ -88,9 +91,9 @@ export function Heatmap({ weeks, activeDays, totalDays }: HeatmapProps) {
       <div className="mt-2 flex items-center gap-1 text-[10px] text-muted" aria-hidden>
         <span className="mr-0.5">Less</span>
         <span className="size-3 rounded-xs border border-line bg-page" />
-        <span className="size-3 rounded-xs" style={{ backgroundColor: withAlpha(theme.series1, 0.25) }} />
-        <span className="size-3 rounded-xs" style={{ backgroundColor: withAlpha(theme.series1, 0.55) }} />
-        <span className="size-3 rounded-xs" style={{ backgroundColor: theme.series1 }} />
+        <span className="size-3 rounded-xs border border-edge" style={{ backgroundColor: withAlpha(theme.series1, 0.35) }} />
+        <span className="size-3 rounded-xs border border-edge" style={{ backgroundColor: withAlpha(theme.series1, 0.62) }} />
+        <span className="size-3 rounded-xs border border-edge" style={{ backgroundColor: theme.series1 }} />
         <span className="ml-0.5">More</span>
       </div>
     </div>

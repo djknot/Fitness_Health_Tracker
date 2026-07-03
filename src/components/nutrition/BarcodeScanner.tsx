@@ -25,6 +25,11 @@ export function BarcodeScanner({
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<number | null>(null);
   const lookupCtrlRef = useRef<AbortController | null>(null);
+  // Captured during the first render (before autoFocus moves focus) so we can
+  // return focus to whatever opened the dialog when it closes.
+  const openerRef = useRef<HTMLElement | null>(
+    typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null,
+  );
 
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<LookupStatus>('idle');
@@ -75,6 +80,9 @@ export function BarcodeScanner({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+
+  // Return focus to the opener when the dialog unmounts.
+  useEffect(() => () => openerRef.current?.focus?.(), []);
 
   // Camera path: lazy-load the detector ponyfill, then poll frames ~every 300 ms.
   useEffect(() => {
@@ -200,15 +208,18 @@ export function BarcodeScanner({
               Look up
             </Button>
           </div>
-          {status === 'looking' && <p className="mt-2 text-xs text-muted">Looking up product…</p>}
-          {status === 'notfound' && (
-            <p className="mt-2 text-xs text-muted">No product found for this barcode.</p>
-          )}
-          {status === 'error' && (
-            <p className="mt-2 text-xs text-muted">
-              Couldn't reach the food database — check your connection and try again.
-            </p>
-          )}
+          {/* Live region so screen readers announce lookup outcomes. */}
+          <div role="status" aria-live="polite">
+            {status === 'looking' && <p className="mt-2 text-xs text-muted">Looking up product…</p>}
+            {status === 'notfound' && (
+              <p className="mt-2 text-xs text-muted">No product found for this barcode.</p>
+            )}
+            {status === 'error' && (
+              <p className="mt-2 text-xs text-muted">
+                Couldn't reach the food database — check your connection and try again.
+              </p>
+            )}
+          </div>
         </form>
       </div>
     </div>
