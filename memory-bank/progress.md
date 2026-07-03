@@ -82,8 +82,13 @@
   rowing machine) + test; (4) heatmap dark-mode cells bordered, ramp strengthened;
   (5) barcode focus-restore + aria-live status; (6) Workouts dirty-draft discard
   confirm + close-editor-on-delete-of-edited.
-- 2 findings refuted (no change): barcode detect-after-close (aborts on unmount),
-  custom-food servingLabel (never populated).
+- A dynamic fix-verification workflow (7 Opus skeptics) then confirmed all 6 fixes
+  correct with a 0-finding fresh sweep, and OVERTURNED the two hand-refutations —
+  both were real and were also fixed: (7) editing a custom food now clears an
+  inherited servingLabel (sample seeded '1 bowl'; the form never managed it →
+  stale label in search) and the sample no longer seeds one; (8) BarcodeScanner
+  guards the camera-detect callback against resolving after unmount (was an
+  unabortable post-close lookup that overwrote the food form).
 
 ## Known gaps / backlog
 - No service worker yet (app shell not offline-cacheable; manifest-only PWA).

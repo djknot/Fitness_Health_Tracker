@@ -116,6 +116,10 @@ export function BarcodeScanner({
           busy = true;
           try {
             const hits = await detector.detect(v);
+            // The modal may have closed while detect() was in flight; bail before
+            // starting a lookup whose AbortController would be created post-cleanup
+            // and thus never aborted (it would overwrite the add-food form).
+            if (cancelled) return;
             const raw = hits[0]?.rawValue.trim();
             if (raw && !found) {
               found = true;

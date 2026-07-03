@@ -31,18 +31,28 @@ self-calibrating TDEE (both toggleable in prefs). No AI features.
   5. BarcodeScanner: focus restored to opener on close; lookup status is aria-live.
   6. Workouts: header button confirms before discarding a dirty draft; deleting the
      workout being edited now closes the stale editor (no more silent no-op save).
-  Refuted (no change): barcode detect-after-close (already aborts on unmount);
-  custom-food servingLabel (add form never sets it → nothing to go stale).
+- Dynamic fix-verification workflow (7 Opus skeptics) then verified all 6 fixes
+  correct + a 0-finding fresh sweep — AND overturned my two hand-refutations, which
+  were real bugs, now also fixed:
+  7. Custom-food servingLabel: sample.ts seeded one ('1 bowl') and the edit form
+     never managed it, so editing left a stale label in search. Edit now clears
+     servingLabel (defends imported backups too) + dropped it from the sample.
+  8. BarcodeScanner camera-detect race: a detect() resolving after unmount started
+     an unabortable lookup that overwrote the food form. Added a `cancelled` guard
+     after the detect await. (Untestable in-sandbox — no camera — but logic-sound.)
+  Lesson: adversarial VERIFICATION caught what my solo refutation missed — always
+  run the verify workflow, don't hand-wave refutations.
 - tsc strict clean; 137 unit tests green (11 files); production build green
   (main ~761 kB + lazy 44 kB barcode ponyfill chunk).
-- Playwright e2e vs the preview build: 43/43 steps green (adds range-validation and
-  barcode focus-restore checks). Light/dark/mobile + dark heatmap screenshots reviewed.
+- Playwright e2e vs the preview build: 44/44 steps green (adds range-validation,
+  barcode focus-restore, and custom-food servingLabel-normalization checks).
+  Light/dark/mobile + dark-heatmap screenshots reviewed.
 
 ## Next immediate steps
-1. Dynamic fix-verification workflow (7 Opus skeptics: one per fix + refutation
-   recheck + fresh diff sweep) is the final gate — address anything it confirms.
-2. NOTE: this branch does NOT auto-deploy (the Pages workflow triggers only on the
-   default branch) — merging to default publishes v0.2 to the live URL.
+- v0.2 is feature-complete, reviewed, and verified on this branch. Optional polish
+  backlog remains (bundle code-splitting, service worker).
+- NOTE: this branch does NOT auto-deploy (the Pages workflow triggers only on the
+  default branch) — merging to default publishes v0.2 to the live URL.
 
 ## Active obstacles
 None. Sandbox: no camera + OFF/USDA unreachable → barcode camera path and remote

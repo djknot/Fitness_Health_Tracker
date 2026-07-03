@@ -77,6 +77,9 @@ export default function CustomFoods() {
         fatG: numOrUndefined(fat) ?? 0,
       },
       servingG: servingNum != null && servingNum > 0 ? servingNum : undefined,
+      // The form expresses serving purely in grams; clear any inherited free-text
+      // label (e.g. from sample data or an imported backup) so it can't go stale.
+      servingLabel: undefined,
     };
     if (editingId) updateCustomFood(editingId, payload);
     else addCustomFood(payload);

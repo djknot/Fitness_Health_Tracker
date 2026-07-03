@@ -160,7 +160,6 @@ export function sampleData(today: string): AppData {
       name: 'Homemade protein oats',
       per100g: { kcal: 145, proteinG: 9, carbsG: 19, fatG: 3.5 },
       servingG: 300,
-      servingLabel: '1 bowl',
       source: 'custom' as const,
     },
   ];
