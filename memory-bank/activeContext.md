@@ -15,6 +15,13 @@ post-v0.2 follow-ups requested by the user.
   an exact "N kcal" (no "~") for manual vs "~N kcal" for estimates.
   `hasManualBurn(w)` helper. Branch restarted from post-merge default (its PR was
   merged, so follow-up = fresh change on the same branch name).
+- Follow-up 2 (DONE): **calorie clarity + nutrition-entry units.** (1) Dashboard
+  calories card now headlines "Calories left" (big remaining number, "N of M kcal
+  eaten" sub, red "X over" when past target); Nutrition daily summary leads with
+  the same remaining figure. (2) Add-food + edit-row inputs now show their unit
+  OUTSIDE the box (visible "kcal"/"g" + Field labels Amount/Calories/Protein/…).
+  (3) Amount field has a g/ml/oz unit selector; toGrams() scales (g/ml 1:1 vs the
+  per-100 basis, oz ×28.3495); logged name records the chosen unit "(150 ml)".
 
 ## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components

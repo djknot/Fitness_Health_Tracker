@@ -8,7 +8,7 @@ import { dailyTargetInfo, type DailyTargetInfo } from '../lib/recommend';
 import type { FoodRecord } from '../lib/foodDb';
 import { computeNutrition, searchFoods } from '../lib/foodSearch';
 import { quickFoodKey } from '../lib/quickfoods';
-import { Button, CardTitle, IconButton, PageHeader, Select, TextInput } from '../components/ui';
+import { Button, CardTitle, Field, IconButton, PageHeader, Select, TextInput } from '../components/ui';
 import { Meter } from '../components/Meter';
 import { MacroBar } from '../components/MacroBar';
 import { BarcodeScanner } from '../components/nutrition/BarcodeScanner';
@@ -75,6 +75,7 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
 
   const [name, setName] = useState('');
   const [grams, setGrams] = useState('');
+  const [qtyUnit, setQtyUnit] = useState<'g' | 'ml' | 'oz'>('g');
   const [kcal, setKcal] = useState('');
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
@@ -137,9 +138,20 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
     setFat(String(n.fatG));
   };
 
+  // The per-100 basis is grams (or millilitres for liquids), so g and ml scale
+  // 1:1; ounces convert to grams first.
+  const toGrams = (qty: number, unit: 'g' | 'ml' | 'oz') => (unit === 'oz' ? qty * 28.3495 : qty);
+
+  const recompute = (qtyStr: string, unit: 'g' | 'ml' | 'oz') => {
+    if (!selected) return;
+    const qty = Number(qtyStr);
+    if (Number.isFinite(qty) && qty > 0) applyNutrition(selected, toGrams(qty, unit));
+  };
+
   const onSelect = (food: FoodRecord) => {
     setSelected(food);
     setName(food.name);
+    setQtyUnit('g'); // servingG is in grams
     const g = food.servingG ?? 100;
     setGrams(String(g));
     applyNutrition(food, g);
@@ -157,10 +169,12 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
 
   const onGramsChange = (v: string) => {
     setGrams(v);
-    if (selected) {
-      const g = Number(v);
-      if (Number.isFinite(g) && g > 0) applyNutrition(selected, g);
-    }
+    recompute(v, qtyUnit);
+  };
+
+  const onUnitChange = (u: 'g' | 'ml' | 'oz') => {
+    setQtyUnit(u);
+    recompute(grams, u);
   };
 
   const kcalNum = Number(kcal);
@@ -172,7 +186,7 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
     addFood({
       date,
       meal,
-      name: selected ? `${selected.name}${grams ? ` (${grams} g)` : ''}` : name.trim(),
+      name: selected ? `${selected.name}${grams ? ` (${grams} ${qtyUnit})` : ''}` : name.trim(),
       calories: Math.round(kcalNum),
       proteinG: optionalNumber(protein),
       carbsG: optionalNumber(carbs),
@@ -180,6 +194,7 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
     });
     setName('');
     setGrams('');
+    setQtyUnit('g');
     setKcal('');
     setProtein('');
     setCarbs('');
@@ -197,7 +212,7 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
           validates; native step/min checks would silently block submission. */}
       <form onSubmit={handleAdd} noValidate>
         <div className="relative mt-3">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <TextInput
               value={name}
               onChange={(e) => {
@@ -217,28 +232,6 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
             >
               <ScanBarcode size={16} />
               <span className="hidden sm:inline">Scan</span>
-            </Button>
-            <TextInput
-              type="number"
-              value={grams}
-              onChange={(e) => onGramsChange(e.target.value)}
-              placeholder="g"
-              aria-label="Quantity (g)"
-              className="w-20"
-            />
-            <TextInput
-              type="number"
-              value={kcal}
-              onChange={(e) => setKcal(e.target.value)}
-              placeholder="kcal"
-              aria-label="Calories"
-              className="w-24"
-            />
-            <Button type="submit" disabled={!canAdd}>
-              Add
-            </Button>
-            <Button variant="ghost" className="text-xs" onClick={() => setShowMacros((v) => !v)}>
-              + macros
             </Button>
           </div>
 
@@ -296,32 +289,86 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
           </div>
         )}
 
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <Field label="Amount">
+            <div className="flex items-center gap-1.5">
+              <TextInput
+                type="number"
+                value={grams}
+                onChange={(e) => onGramsChange(e.target.value)}
+                aria-label="Amount"
+                className="w-16"
+              />
+              <Select
+                value={qtyUnit}
+                onChange={(e) => onUnitChange(e.target.value as 'g' | 'ml' | 'oz')}
+                aria-label="Amount unit"
+                className="w-16"
+              >
+                <option value="g">g</option>
+                <option value="ml">ml</option>
+                <option value="oz">oz</option>
+              </Select>
+            </div>
+          </Field>
+          <Field label="Calories">
+            <div className="flex items-center gap-1.5">
+              <TextInput
+                type="number"
+                value={kcal}
+                onChange={(e) => setKcal(e.target.value)}
+                aria-label="Calories"
+                className="w-20"
+              />
+              <span className="text-sm text-ink2">kcal</span>
+            </div>
+          </Field>
+          <Button type="submit" disabled={!canAdd}>
+            Add
+          </Button>
+          <Button variant="ghost" className="text-xs" onClick={() => setShowMacros((v) => !v)}>
+            {showMacros ? '– macros' : '+ macros'}
+          </Button>
+        </div>
+
         {showMacros && (
-          <div className="mt-2 flex gap-2">
-            <TextInput
-              type="number"
-              value={protein}
-              onChange={(e) => setProtein(e.target.value)}
-              placeholder="P"
-              aria-label="Protein (g)"
-              className="w-20"
-            />
-            <TextInput
-              type="number"
-              value={carbs}
-              onChange={(e) => setCarbs(e.target.value)}
-              placeholder="C"
-              aria-label="Carbs (g)"
-              className="w-20"
-            />
-            <TextInput
-              type="number"
-              value={fat}
-              onChange={(e) => setFat(e.target.value)}
-              placeholder="F"
-              aria-label="Fat (g)"
-              className="w-20"
-            />
+          <div className="mt-2 flex flex-wrap gap-3">
+            <Field label="Protein">
+              <div className="flex items-center gap-1.5">
+                <TextInput
+                  type="number"
+                  value={protein}
+                  onChange={(e) => setProtein(e.target.value)}
+                  aria-label="Protein (g)"
+                  className="w-16"
+                />
+                <span className="text-sm text-ink2">g</span>
+              </div>
+            </Field>
+            <Field label="Carbs">
+              <div className="flex items-center gap-1.5">
+                <TextInput
+                  type="number"
+                  value={carbs}
+                  onChange={(e) => setCarbs(e.target.value)}
+                  aria-label="Carbs (g)"
+                  className="w-16"
+                />
+                <span className="text-sm text-ink2">g</span>
+              </div>
+            </Field>
+            <Field label="Fat">
+              <div className="flex items-center gap-1.5">
+                <TextInput
+                  type="number"
+                  value={fat}
+                  onChange={(e) => setFat(e.target.value)}
+                  aria-label="Fat (g)"
+                  className="w-16"
+                />
+                <span className="text-sm text-ink2">g</span>
+              </div>
+            </Field>
           </div>
         )}
       </form>
@@ -376,14 +423,16 @@ function EditFoodRow({ entry, onDone }: { entry: FoodEntry; onDone: () => void }
           placeholder="Food name"
           className="flex-1 min-w-40"
         />
-        <TextInput
-          type="number"
-          value={kcal}
-          onChange={(e) => setKcal(e.target.value)}
-          placeholder="kcal"
-          aria-label="Calories"
-          className="w-24"
-        />
+        <div className="flex items-center gap-1.5">
+          <TextInput
+            type="number"
+            value={kcal}
+            onChange={(e) => setKcal(e.target.value)}
+            aria-label="Calories"
+            className="w-20"
+          />
+          <span className="text-sm text-ink2">kcal</span>
+        </div>
         <Select
           value={meal}
           onChange={(e) => setMeal(e.target.value as MealType)}
@@ -398,30 +447,39 @@ function EditFoodRow({ entry, onDone }: { entry: FoodEntry; onDone: () => void }
         </Select>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <TextInput
-          type="number"
-          value={protein}
-          onChange={(e) => setProtein(e.target.value)}
-          placeholder="P"
-          aria-label="Protein (g)"
-          className="w-20"
-        />
-        <TextInput
-          type="number"
-          value={carbs}
-          onChange={(e) => setCarbs(e.target.value)}
-          placeholder="C"
-          aria-label="Carbs (g)"
-          className="w-20"
-        />
-        <TextInput
-          type="number"
-          value={fat}
-          onChange={(e) => setFat(e.target.value)}
-          placeholder="F"
-          aria-label="Fat (g)"
-          className="w-20"
-        />
+        <div className="flex items-center gap-1.5">
+          <TextInput
+            type="number"
+            value={protein}
+            onChange={(e) => setProtein(e.target.value)}
+            placeholder="Protein"
+            aria-label="Protein (g)"
+            className="w-20"
+          />
+          <span className="text-sm text-ink2">g</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <TextInput
+            type="number"
+            value={carbs}
+            onChange={(e) => setCarbs(e.target.value)}
+            placeholder="Carbs"
+            aria-label="Carbs (g)"
+            className="w-20"
+          />
+          <span className="text-sm text-ink2">g</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <TextInput
+            type="number"
+            value={fat}
+            onChange={(e) => setFat(e.target.value)}
+            placeholder="Fat"
+            aria-label="Fat (g)"
+            className="w-20"
+          />
+          <span className="text-sm text-ink2">g</span>
+        </div>
         <div className="ml-auto flex gap-2">
           <Button type="submit" disabled={!canSave}>
             Save
@@ -504,14 +562,19 @@ export default function Nutrition() {
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <section className="card">
           <CardTitle title="Daily summary" />
-          <div>
-            <span className="text-2xl font-semibold text-ink">{day.calories.toLocaleString('en-US')}</span>{' '}
-            <span className="text-base text-ink2">/ {targetInfo.target.toLocaleString('en-US')} kcal</span>
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <span
+              className={`text-3xl font-bold leading-none ${remaining >= 0 ? 'text-ink' : 'text-bad'}`}
+            >
+              {Math.abs(remaining).toLocaleString('en-US')}
+            </span>
+            <span className="text-sm font-medium text-ink2">
+              kcal {remaining >= 0 ? 'left' : 'over'}
+            </span>
           </div>
-          <p className="text-xs text-muted">
-            {remaining >= 0
-              ? `${remaining.toLocaleString('en-US')} kcal remaining`
-              : `${(-remaining).toLocaleString('en-US')} kcal over target`}
+          <p className="mt-1 text-sm text-ink2">
+            {day.calories.toLocaleString('en-US')} of {targetInfo.target.toLocaleString('en-US')} kcal
+            eaten
           </p>
           <Meter value={day.calories} max={targetInfo.target} overIsBad label="Calories" className="mt-2" />
           <p className="mt-1 text-xs text-muted">
