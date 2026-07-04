@@ -82,6 +82,8 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
   const customFoods = useAppStore((s) => s.customFoods);
   const favoriteFoods = useAppStore((s) => s.favoriteFoods);
   const recentFoods = useAppStore((s) => s.recentFoods);
+  const savedMeals = useAppStore((s) => s.savedMeals);
+  const logSavedMeal = useAppStore((s) => s.logSavedMeal);
 
   const [name, setName] = useState('');
   const [grams, setGrams] = useState('');
@@ -128,6 +130,8 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
     const favKeys = new Set(favoriteFoods.map(quickFoodKey));
     return recentFoods.filter((r) => !favKeys.has(quickFoodKey(r))).slice(0, 8);
   }, [favoriteFoods, recentFoods]);
+  // Saved meals for THIS section, so you can log a whole meal where you add food.
+  const sectionMeals = savedMeals.filter((m) => m.meal === meal);
 
   const logQuick = (qf: QuickFood) =>
     addFood({
@@ -215,6 +219,23 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
 
   return (
     <div>
+      {sectionMeals.length > 0 && (
+        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap pb-0.5">
+          <span className="shrink-0 text-[11px] font-medium text-muted">Meals</span>
+          {sectionMeals.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => logSavedMeal(m.id, date)}
+              title={`Log "${m.name}" — ${m.items.length} ${m.items.length === 1 ? 'item' : 'items'}`}
+              className="chip shrink-0 bg-accent-wash text-ink2 transition-colors hover:bg-accent-soft hover:text-ink"
+            >
+              <BookmarkPlus size={12} className="text-muted" />
+              {m.name}
+            </button>
+          ))}
+        </div>
+      )}
       <QuickChips label="★ Favorites" items={favorites} onPick={logQuick} />
       <QuickChips label="Recent" items={recents} onPick={logQuick} />
 
