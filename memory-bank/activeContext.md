@@ -31,6 +31,11 @@ post-v0.2 follow-ups requested by the user.
   `recommend.macroTargets(goals, rec)` = manual ?? recommended split; Nutrition
   daily summary shows per-macro consumed/target meters. backup/sample/emptyData
   cover the new slice. 143 unit tests; Playwright e2e 51/51.
+- Follow-up 3b (DONE): saved-meal DISCOVERABILITY — user couldn't find saved meals
+  to select. Added a "Meals" chip row inside each meal section's add area
+  (AddFoodRow), filtered to that section's meal; tapping logs the whole meal there.
+  Top "Saved meals" card kept for delete/overview. (Repro confirmed no bug: fresh
+  + v2-returning users both save/persist correctly — it was purely placement.)
 
 ## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components
