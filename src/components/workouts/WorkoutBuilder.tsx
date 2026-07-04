@@ -118,6 +118,11 @@ export default function WorkoutBuilder({
   const [exercises, setExercises] = useState<DraftExercise[]>(() =>
     seed.exercises.length > 0 ? seed.exercises.map(toDraft) : [makeExercise()],
   );
+  // Optional manual calorie override (only ever seeded from an existing workout,
+  // never from a template — a calorie count is session-specific, not part of a routine).
+  const [calories, setCalories] = useState(
+    seed.editing?.caloriesKcal != null ? String(seed.editing.caloriesKcal) : '',
+  );
 
   const updateExercise = (key: number, patch: Partial<DraftExercise>) =>
     setExercises((exs) => exs.map((ex) => (ex.key === key ? { ...ex, ...patch } : ex)));
@@ -190,6 +195,13 @@ export default function WorkoutBuilder({
     };
     const notes = seed.editing?.notes;
     if (notes) payload.notes = notes;
+    // Only attach a manual figure when the field holds a valid number; a blank
+    // field omits it, so editing a workout and clearing the box reverts to the
+    // MET estimate (updateWorkout replaces the record wholesale).
+    const cal = Number(calories);
+    if (calories.trim() !== '' && Number.isFinite(cal) && cal >= 0) {
+      payload.caloriesKcal = Math.round(cal);
+    }
     if (seed.editing) updateWorkout(seed.editing.id, payload);
     else addWorkout(payload);
     onDone();
@@ -235,6 +247,20 @@ export default function WorkoutBuilder({
             />
           </Field>
         </div>
+
+        <Field label="Calories burned (optional)">
+          <TextInput
+            type="number"
+            min={0}
+            inputMode="numeric"
+            placeholder="Auto-estimated from your exercises"
+            value={calories}
+            onChange={(e) => setCalories(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-muted">
+            Leave blank to estimate from METs, or enter the number your watch or machine shows.
+          </p>
+        </Field>
 
         {exercises.map((ex) => (
           <div key={ex.key} className="rounded-xl border border-line p-3 flex flex-col gap-2">
