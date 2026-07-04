@@ -4,9 +4,11 @@ import { addDays } from './dates';
 import {
   calorieTargetInfo,
   dailyTargetInfo,
+  macroTargets,
   mifflinStJeorBmr,
   recommend,
   targetsFromTdee,
+  type Recommendation,
 } from './recommend';
 
 const maleProfile: Profile = {
@@ -276,3 +278,31 @@ describe('dailyTargetInfo', () => {
     expect(info.target).toBe(goals.dailyCalories + 163);
   });
 });
+
+describe('macroTargets', () => {
+  const rec = { macros: { proteinG: 120, carbsG: 200, fatG: 60 } } as Recommendation;
+
+  it('uses manual goal values when they are set', () => {
+    expect(macroTargets({ proteinTargetG: 180, carbsTargetG: 150, fatTargetG: 50 }, rec)).toEqual({
+      proteinG: 180,
+      carbsG: 150,
+      fatG: 50,
+    });
+  });
+
+  it('falls back to the recommended split for unset macros', () => {
+    expect(macroTargets({ proteinTargetG: 180 }, rec)).toEqual({
+      proteinG: 180,
+      carbsG: 200,
+      fatG: 60,
+    });
+  });
+
+  it('is all-undefined with no manual targets and no recommendation', () => {
+    expect(macroTargets({}, null)).toEqual({
+      proteinG: undefined,
+      carbsG: undefined,
+      fatG: undefined,
+    });
+  });
+})

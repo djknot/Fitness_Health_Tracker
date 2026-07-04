@@ -30,6 +30,7 @@ export function emptyData(): AppData {
     customFoods: [],
     favoriteFoods: [],
     recentFoods: [],
+    savedMeals: [],
     goals: { ...DEFAULT_GOALS },
     profile: { ...DEFAULT_PROFILE },
     prefs: { ...DEFAULT_PREFS },

@@ -79,6 +79,18 @@ export interface QuickFood {
   fatG?: number;
 }
 
+/** One food inside a saved meal (no id — it is re-created as a FoodEntry when logged). */
+export type MealItem = Omit<QuickFood, 'id'>;
+
+/** A reusable group of foods logged together in one tap (e.g. "usual breakfast"). */
+export interface SavedMeal {
+  id: string;
+  name: string;
+  /** The meal section its items are logged into when re-used. */
+  meal: MealType;
+  items: MealItem[];
+}
+
 export interface MetricEntry {
   id: string;
   date: string;
@@ -108,6 +120,10 @@ export interface Goals {
   dailyWaterMl: number;
   weeklyWorkouts: number;
   targetWeightKg?: number;
+  /** Manual daily macro targets (grams). Unset falls back to the recommended split. */
+  proteinTargetG?: number;
+  carbsTargetG?: number;
+  fatTargetG?: number;
 }
 
 export type Sex = 'male' | 'female';
@@ -151,6 +167,7 @@ export interface AppData {
   customFoods: CustomFood[];
   favoriteFoods: QuickFood[];
   recentFoods: QuickFood[];
+  savedMeals: SavedMeal[];
   goals: Goals;
   profile: Profile;
   prefs: Prefs;

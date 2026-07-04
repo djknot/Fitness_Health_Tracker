@@ -46,6 +46,14 @@ function SettingsView() {
   const [targetWeight, setTargetWeight] = useState(() =>
     goals.targetWeightKg != null ? String(kgToDisplay(goals.targetWeightKg, goals.units)) : '',
   );
+  // Macro targets are grams (unit-agnostic — no draftUnits coupling).
+  const [proteinT, setProteinT] = useState(() =>
+    goals.proteinTargetG != null ? String(goals.proteinTargetG) : '',
+  );
+  const [carbsT, setCarbsT] = useState(() =>
+    goals.carbsTargetG != null ? String(goals.carbsTargetG) : '',
+  );
+  const [fatT, setFatT] = useState(() => (goals.fatTargetG != null ? String(goals.fatTargetG) : ''));
   const [goalsSaved, flashGoalsSaved] = useSavedFlash();
 
   const onUnitsChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -69,12 +77,20 @@ function SettingsView() {
 
   const saveGoals = () => {
     const target = numOrUndefined(targetWeight);
+    // '' or non-positive → undefined (macro tracking falls back to the recommended split).
+    const posTarget = (s: string) => {
+      const n = numOrUndefined(s);
+      return n != null && n > 0 ? Math.round(n) : undefined;
+    };
     setGoals({
       units: draftUnits,
       dailyCalories: positiveOr(calories, goals.dailyCalories),
       dailyWaterMl: positiveOr(water, goals.dailyWaterMl),
       weeklyWorkouts: positiveOr(weekly, goals.weeklyWorkouts),
       targetWeightKg: target != null && target > 0 ? displayToKg(target, draftUnits) : undefined,
+      proteinTargetG: posTarget(proteinT),
+      carbsTargetG: posTarget(carbsT),
+      fatTargetG: posTarget(fatT),
     });
     flashGoalsSaved();
   };
@@ -227,6 +243,40 @@ function SettingsView() {
             />
           </Field>
         </div>
+
+        <p className="mt-4 mb-2 text-xs font-medium text-ink2">
+          Daily macro targets (grams) — leave blank to use the recommended split.
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Protein (g)">
+            <TextInput
+              type="number"
+              min={0}
+              placeholder="auto"
+              value={proteinT}
+              onChange={(e) => setProteinT(e.target.value)}
+            />
+          </Field>
+          <Field label="Carbs (g)">
+            <TextInput
+              type="number"
+              min={0}
+              placeholder="auto"
+              value={carbsT}
+              onChange={(e) => setCarbsT(e.target.value)}
+            />
+          </Field>
+          <Field label="Fat (g)">
+            <TextInput
+              type="number"
+              min={0}
+              placeholder="auto"
+              value={fatT}
+              onChange={(e) => setFatT(e.target.value)}
+            />
+          </Field>
+        </div>
+
         <div className="mt-4 flex items-center gap-3">
           <Button onClick={saveGoals}>Save</Button>
           {goalsSaved && <span className="text-xs text-good">Saved ✓</span>}

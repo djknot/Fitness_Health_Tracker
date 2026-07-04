@@ -22,6 +22,15 @@ post-v0.2 follow-ups requested by the user.
   OUTSIDE the box (visible "kcal"/"g" + Field labels Amount/Calories/Protein/…).
   (3) Amount field has a g/ml/oz unit selector; toGrams() scales (g/ml 1:1 vs the
   per-100 basis, oz ×28.3495); logged name records the chosen unit "(150 ml)".
+- Follow-up 3 (DONE): **saved meals + macro targets.** New `savedMeals` slice
+  (SavedMeal{name,meal,items:MealItem[]}); store addSavedMeal/deleteSavedMeal/
+  logSavedMeal (logs all items to their meal on a date, pushes recents); persist
+  bumped v2→v3 (migrate backfills). Nutrition: "Save as meal" on a meal section
+  captures its entries; "Saved meals" card re-logs/deletes. Goals gained optional
+  proteinTargetG/carbsTargetG/fatTargetG (Settings, grams — unit-agnostic);
+  `recommend.macroTargets(goals, rec)` = manual ?? recommended split; Nutrition
+  daily summary shows per-macro consumed/target meters. backup/sample/emptyData
+  cover the new slice. 143 unit tests; Playwright e2e 51/51.
 
 ## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components

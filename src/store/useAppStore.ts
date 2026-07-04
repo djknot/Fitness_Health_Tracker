@@ -10,6 +10,7 @@ import type {
   Prefs,
   Profile,
   QuickFood,
+  SavedMeal,
   Workout,
   WorkoutTemplate,
 } from '../types';
@@ -49,6 +50,11 @@ interface AppStore extends AppData {
 
   /** Star/unstar a quick food (deduped by name+calories). */
   toggleFavoriteFood(qf: Omit<QuickFood, 'id'>): void;
+
+  addSavedMeal(m: Omit<SavedMeal, 'id'>): void;
+  deleteSavedMeal(id: string): void;
+  /** Log every item of a saved meal onto `date`, into the meal's own section. */
+  logSavedMeal(id: string, date: string): void;
 
   setGoals(g: Partial<Goals>): void;
   setProfile(p: Partial<Profile>): void;
@@ -134,6 +140,29 @@ export const useAppStore = create<AppStore>()(
           };
         }),
 
+      addSavedMeal: (m) => set((s) => ({ savedMeals: [...s.savedMeals, { ...m, id: uid() }] })),
+      deleteSavedMeal: (id) =>
+        set((s) => ({ savedMeals: s.savedMeals.filter((m) => m.id !== id) })),
+      logSavedMeal: (id, date) =>
+        set((s) => {
+          const meal = s.savedMeals.find((m) => m.id === id);
+          if (!meal) return s;
+          const entries = meal.items.map((it) => ({ ...it, id: uid(), date, meal: meal.meal }));
+          const recentFoods = entries.reduce(
+            (list, e) =>
+              pushRecent(list, {
+                id: uid(),
+                name: e.name,
+                calories: e.calories,
+                proteinG: e.proteinG,
+                carbsG: e.carbsG,
+                fatG: e.fatG,
+              }),
+            s.recentFoods,
+          );
+          return { foods: [...s.foods, ...entries], recentFoods };
+        }),
+
       setGoals: (g) => set((s) => ({ goals: { ...s.goals, ...g } })),
       setProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
       setPrefs: (p) => set((s) => ({ prefs: { ...s.prefs, ...p } })),
@@ -143,11 +172,12 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'fittrack-v1',
-      version: 2,
-      // v1 → v2: new slices (fasts/templates/customFoods/favorites/recents/prefs).
+      version: 3,
+      // v1→v2 added the v0.2 slices; v2→v3 adds savedMeals + goal macro targets.
+      // Spreading over emptyData() backfills any slice the persisted blob lacks.
       migrate: (persisted, version) => {
         const p = (persisted ?? {}) as Partial<AppData>;
-        if (version < 2) return { ...emptyData(), ...p };
+        if (version < 3) return { ...emptyData(), ...p };
         return p as AppData;
       },
       partialize: (s) => ({
@@ -160,6 +190,7 @@ export const useAppStore = create<AppStore>()(
         customFoods: s.customFoods,
         favoriteFoods: s.favoriteFoods,
         recentFoods: s.recentFoods,
+        savedMeals: s.savedMeals,
         goals: s.goals,
         profile: s.profile,
         prefs: s.prefs,

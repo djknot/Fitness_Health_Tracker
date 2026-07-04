@@ -1,4 +1,4 @@
-import type { ActivityLevel, AppData, Profile, Sex } from '../types';
+import type { ActivityLevel, AppData, Goals, Profile, Sex } from '../types';
 import { computeAdaptiveTdee, type AdaptiveTdee } from './adaptive';
 import { dayBurnKcal } from './burn';
 import { todayISO } from './dates';
@@ -112,6 +112,29 @@ export function calorieTargetInfo(
     return { target: rec.targetCalories, source: 'recommended', recommendation: rec };
   }
   return { target: data.goals.dailyCalories, source: 'manual', recommendation: rec };
+}
+
+export interface MacroTargets {
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+}
+
+/**
+ * Effective daily macro targets (grams): a manually-set goal value wins for each
+ * macro; otherwise the recommended split is used when it can be computed. A macro
+ * with neither stays undefined (no target to track against).
+ */
+export function macroTargets(
+  goals: Pick<Goals, 'proteinTargetG' | 'carbsTargetG' | 'fatTargetG'>,
+  recommendation: Recommendation | null,
+): MacroTargets {
+  const m = recommendation?.macros;
+  return {
+    proteinG: goals.proteinTargetG ?? m?.proteinG,
+    carbsG: goals.carbsTargetG ?? m?.carbsG,
+    fatG: goals.fatTargetG ?? m?.fatG,
+  };
 }
 
 export interface DailyTargetInfo {

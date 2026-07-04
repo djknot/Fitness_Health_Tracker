@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, ScanBarcode, Star, Trash2, X } from 'lucide-react';
+import {
+  BookmarkPlus,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Plus,
+  ScanBarcode,
+  Star,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { MEAL_TYPES, type FoodEntry, type MealType, type QuickFood } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { addDays, formatLong, todayISO } from '../lib/dates';
 import { nutritionOn } from '../lib/stats';
-import { dailyTargetInfo, type DailyTargetInfo } from '../lib/recommend';
+import { dailyTargetInfo, macroTargets, type DailyTargetInfo } from '../lib/recommend';
 import type { FoodRecord } from '../lib/foodDb';
 import { computeNutrition, searchFoods } from '../lib/foodSearch';
 import { quickFoodKey } from '../lib/quickfoods';
@@ -493,6 +503,30 @@ function EditFoodRow({ entry, onDone }: { entry: FoodEntry; onDone: () => void }
   );
 }
 
+/** Consumed-vs-target progress for one macro; renders nothing without a target. */
+function MacroTargetRow({
+  label,
+  consumed,
+  target,
+}: {
+  label: string;
+  consumed: number;
+  target?: number;
+}) {
+  if (target == null || target <= 0) return null;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="font-medium text-ink2">{label}</span>
+        <span className="text-muted">
+          {Math.round(consumed)} / {target} g
+        </span>
+      </div>
+      <Meter value={consumed} max={target} label={`${label} target`} className="mt-1" />
+    </div>
+  );
+}
+
 export default function Nutrition() {
   const foods = useAppStore((s) => s.foods);
   const workouts = useAppStore((s) => s.workouts);
@@ -502,9 +536,13 @@ export default function Nutrition() {
   const profile = useAppStore((s) => s.profile);
   const prefs = useAppStore((s) => s.prefs);
   const favoriteFoods = useAppStore((s) => s.favoriteFoods);
+  const savedMeals = useAppStore((s) => s.savedMeals);
   const addWater = useAppStore((s) => s.addWater);
   const deleteFood = useAppStore((s) => s.deleteFood);
   const toggleFavoriteFood = useAppStore((s) => s.toggleFavoriteFood);
+  const addSavedMeal = useAppStore((s) => s.addSavedMeal);
+  const deleteSavedMeal = useAppStore((s) => s.deleteSavedMeal);
+  const logSavedMeal = useAppStore((s) => s.logSavedMeal);
 
   const [date, setDate] = useState(todayISO());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -519,6 +557,7 @@ export default function Nutrition() {
   const targetInfo = dailyTargetInfo({ goals, profile, prefs, metrics, foods, workouts }, date);
   const water = waterByDate[date] ?? 0;
   const remaining = targetInfo.target - day.calories;
+  const macros = macroTargets(goals, targetInfo.recommendation);
 
   const favoriteKeys = useMemo(() => new Set(favoriteFoods.map(quickFoodKey)), [favoriteFoods]);
 
@@ -594,6 +633,13 @@ export default function Nutrition() {
           <div className="mt-3">
             <MacroBar proteinG={day.proteinG} carbsG={day.carbsG} fatG={day.fatG} />
           </div>
+          {(macros.proteinG != null || macros.carbsG != null || macros.fatG != null) && (
+            <div className="mt-3 flex flex-col gap-2">
+              <MacroTargetRow label="Protein" consumed={day.proteinG} target={macros.proteinG} />
+              <MacroTargetRow label="Carbs" consumed={day.carbsG} target={macros.carbsG} />
+              <MacroTargetRow label="Fat" consumed={day.fatG} target={macros.fatG} />
+            </div>
+          )}
         </section>
 
         <section className="card">
@@ -617,6 +663,43 @@ export default function Nutrition() {
 
       <FastingCard />
 
+      {savedMeals.length > 0 && (
+        <section className="card">
+          <CardTitle title="Saved meals" sub="Log a whole meal in one tap." />
+          <ul className="flex flex-col gap-1">
+            {savedMeals.map((m) => {
+              const kcal = m.items.reduce((n, it) => n + it.calories, 0);
+              return (
+                <li key={m.id} className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1 py-1">
+                    <p className="truncate text-sm font-medium text-ink">{m.name}</p>
+                    <p className="text-xs text-muted">
+                      {capitalize(m.meal)} · {m.items.length}{' '}
+                      {m.items.length === 1 ? 'item' : 'items'} · {kcal.toLocaleString('en-US')} kcal
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="shrink-0"
+                    onClick={() => logSavedMeal(m.id, date)}
+                  >
+                    <Plus size={14} /> Log
+                  </Button>
+                  <IconButton
+                    label={`Delete saved meal "${m.name}"`}
+                    onClick={() => {
+                      if (window.confirm(`Delete saved meal "${m.name}"?`)) deleteSavedMeal(m.id);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {MEAL_TYPES.map((meal) => {
         const entries = foods.filter((f) => f.date === date && f.meal === meal);
         const total = entries.reduce((n, f) => n + f.calories, 0);
@@ -625,6 +708,33 @@ export default function Nutrition() {
             <CardTitle
               title={capitalize(meal)}
               sub={entries.length ? `${total.toLocaleString('en-US')} kcal` : 'No entries yet'}
+              action={
+                entries.length > 0 ? (
+                  <Button
+                    variant="ghost"
+                    className="text-xs"
+                    title="Save these items as a reusable meal"
+                    onClick={() => {
+                      const nm = window.prompt('Name this meal:', `My ${meal}`);
+                      if (nm && nm.trim()) {
+                        addSavedMeal({
+                          name: nm.trim(),
+                          meal,
+                          items: entries.map((f) => ({
+                            name: f.name,
+                            calories: f.calories,
+                            proteinG: f.proteinG,
+                            carbsG: f.carbsG,
+                            fatG: f.fatG,
+                          })),
+                        });
+                      }
+                    }}
+                  >
+                    <BookmarkPlus size={14} /> Save as meal
+                  </Button>
+                ) : undefined
+              }
             />
             <div className="divide-y divide-line">
               {entries.map((f) => {
