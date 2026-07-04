@@ -73,6 +73,7 @@ export default function Dashboard() {
 
   const day = nutritionOn(foods, today);
   const targetInfo = dailyTargetInfo({ goals, profile, prefs, metrics, foods, workouts }, today);
+  const remaining = targetInfo.target - day.calories;
   const weekCount = workoutsInWeekOf(workouts, today).length;
   const streak = logStreak(loggedDates({ workouts, foods, metrics, waterByDate }), today);
   const water = waterByDate[today] ?? 0;
@@ -117,11 +118,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           icon={Utensils}
-          label="Calories today"
-          value={day.calories.toLocaleString('en-US')}
-          sub={`of ${targetInfo.target.toLocaleString('en-US')} kcal ${
-            targetInfo.source === 'manual' ? 'target' : 'recommended'
-          }`}
+          label="Calories left"
+          value={Math.max(0, remaining).toLocaleString('en-US')}
+          delta={
+            remaining < 0
+              ? { text: `${(-remaining).toLocaleString('en-US')} over`, good: false }
+              : undefined
+          }
+          sub={`${day.calories.toLocaleString('en-US')} of ${targetInfo.target.toLocaleString('en-US')} kcal eaten`}
         >
           {(targetInfo.burnKcal > 0 || targetInfo.source === 'recommended-adaptive') && (
             <div className="flex flex-wrap items-center gap-1.5">
@@ -147,7 +151,7 @@ export default function Dashboard() {
             value={day.calories}
             max={targetInfo.target}
             overIsBad
-            label="Calories today"
+            label="Calories"
             className="mt-1"
           />
         </StatCard>
