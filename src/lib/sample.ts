@@ -177,6 +177,19 @@ export function sampleData(today: string): AppData {
     fatG: f.fatG,
   }));
 
+  const savedMeals = [
+    {
+      id: uid(),
+      name: 'Usual breakfast',
+      meal: 'breakfast' as const,
+      items: [
+        { name: 'Oatmeal with berries', calories: 320, proteinG: 12, carbsG: 55, fatG: 8 },
+        { name: 'Greek yogurt', calories: 120, proteinG: 17, carbsG: 6, fatG: 4 },
+        { name: 'Black coffee', calories: 5, proteinG: 0, carbsG: 1, fatG: 0 },
+      ],
+    },
+  ];
+
   return {
     workouts,
     foods,
@@ -187,6 +200,7 @@ export function sampleData(today: string): AppData {
     customFoods,
     favoriteFoods,
     recentFoods,
+    savedMeals,
     prefs: {
       theme: 'system',
       earnBackExercise: true,
@@ -198,6 +212,9 @@ export function sampleData(today: string): AppData {
       dailyWaterMl: 2500,
       weeklyWorkouts: 4,
       targetWeightKg: 78,
+      proteinTargetG: 150,
+      carbsTargetG: 220,
+      fatTargetG: 70,
     },
     profile: {
       heightCm: 178,
