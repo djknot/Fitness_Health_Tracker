@@ -39,7 +39,14 @@ export function exerciseBurnKcal(ex: Exercise, weightKg: number): number {
   return metFor(ex) * weightKg * (minutes / 60);
 }
 
+/** True when the user entered their own calorie figure for this workout. */
+export function hasManualBurn(w: Pick<Workout, 'caloriesKcal'>): boolean {
+  return w.caloriesKcal != null && w.caloriesKcal >= 0;
+}
+
 export function workoutBurnKcal(w: Workout, weightKg: number): number {
+  // A user-entered figure (e.g. from a watch) always wins over the MET estimate.
+  if (hasManualBurn(w)) return Math.round(w.caloriesKcal as number);
   return Math.round(w.exercises.reduce((sum, ex) => sum + exerciseBurnKcal(ex, weightKg), 0));
 }
 

@@ -6,11 +6,15 @@
 Live app: https://djknot.github.io/Fitness_Health_Tracker/
 
 ## Current focus
-**v0.2 feature batch — pages BUILT, e2e-verified; adversarial review next.**
-Scope (user-approved): mood, extra measurements, fasting, edit-in-place, workout
-templates, exercise burn, favorites/recents, daily check-in card, manual theme
-toggle, barcode scanning, USDA food DB, custom foods, Reports page, earn-back,
-self-calibrating TDEE (both toggleable in prefs). No AI features.
+**v0.2 SHIPPED (merged to default via PR #1, deployed to the live URL).** Now on
+post-v0.2 follow-ups requested by the user.
+- Follow-up 1 (DONE): **manual workout-calorie override.** `Workout.caloriesKcal?`;
+  `burn.workoutBurnKcal` returns it when set (else the MET estimate) so earn-back
+  honors it too; optional "Calories burned" field in WorkoutBuilder (blank = auto,
+  clearing on edit reverts since updateWorkout replaces wholesale); row chip shows
+  an exact "N kcal" (no "~") for manual vs "~N kcal" for estimates.
+  `hasManualBurn(w)` helper. Branch restarted from post-merge default (its PR was
+  merged, so follow-up = fresh change on the same branch name).
 
 ## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components

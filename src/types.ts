@@ -26,6 +26,8 @@ export interface Workout {
   name: string;
   exercises: Exercise[];
   notes?: string;
+  /** Manual calorie-burn for the whole session; when set, overrides the MET estimate. */
+  caloriesKcal?: number;
 }
 
 /** A reusable workout routine. */

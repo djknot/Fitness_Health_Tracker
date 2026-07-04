@@ -100,9 +100,14 @@ function WorkoutCard({
           {burnKcal > 0 && (
             <span
               className="chip bg-accent-wash text-ink2"
-              title="Estimated calories: METs × body weight × duration"
+              title={
+                workout.caloriesKcal != null
+                  ? 'Calories you entered for this workout'
+                  : 'Estimated calories: METs × body weight × duration'
+              }
             >
-              ~{burnKcal} kcal
+              {workout.caloriesKcal != null ? '' : '~'}
+              {burnKcal} kcal
             </span>
           )}
         </div>

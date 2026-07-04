@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Exercise, Workout } from '../types';
-import { dayBurnKcal, exerciseBurnKcal, metFor, MINUTES_PER_SET, workoutBurnKcal } from './burn';
+import {
+  dayBurnKcal,
+  exerciseBurnKcal,
+  hasManualBurn,
+  metFor,
+  MINUTES_PER_SET,
+  workoutBurnKcal,
+} from './burn';
 
 const cardio = (id: string, name: string, durationMin?: number): Exercise => ({
   id,
@@ -82,6 +89,22 @@ describe('workoutBurnKcal', () => {
   it('is 0 for an empty workout', () => {
     expect(workoutBurnKcal(workoutOn('w1', '2026-07-01', []), 80)).toBe(0);
   });
+
+  it('uses a manual override instead of the MET estimate when one is set', () => {
+    const w = workoutOn('w1', '2026-07-01', [cardio('e1', 'Evening Walk', 40)]); // estimate ≈ 187
+    expect(workoutBurnKcal(w, 80)).toBe(187);
+    expect(workoutBurnKcal({ ...w, caloriesKcal: 450 }, 80)).toBe(450);
+    expect(workoutBurnKcal({ ...w, caloriesKcal: 0 }, 80)).toBe(0); // an explicit 0 still wins
+  });
+});
+
+describe('hasManualBurn', () => {
+  it('is true only when a non-negative override is present', () => {
+    expect(hasManualBurn({})).toBe(false);
+    expect(hasManualBurn({ caloriesKcal: 300 })).toBe(true);
+    expect(hasManualBurn({ caloriesKcal: 0 })).toBe(true);
+    expect(hasManualBurn({ caloriesKcal: -5 })).toBe(false);
+  });
 });
 
 describe('dayBurnKcal', () => {
@@ -98,5 +121,13 @@ describe('dayBurnKcal', () => {
 
   it('is 0 on a date with no workouts', () => {
     expect(dayBurnKcal(workouts, '2026-06-30', 80)).toBe(0);
+  });
+
+  it('respects a per-workout manual override in the daily total', () => {
+    const ws = [
+      workoutOn('w1', '2026-07-01', [cardio('e1', 'Run', 30)]), // estimate 392
+      { ...workoutOn('w2', '2026-07-01', [cardio('e2', 'Swim', 30)]), caloriesKcal: 500 },
+    ];
+    expect(dayBurnKcal(ws, '2026-07-01', 80)).toBe(892); // 392 estimate + 500 override
   });
 });
