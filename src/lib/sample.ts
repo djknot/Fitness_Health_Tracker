@@ -212,9 +212,8 @@ export function sampleData(today: string): AppData {
       dailyWaterMl: 2500,
       weeklyWorkouts: 4,
       targetWeightKg: 78,
-      proteinTargetG: 150,
-      carbsTargetG: 220,
-      fatTargetG: 70,
+      // Macro targets left unset so the sample tracks against the auto split,
+      // which is sized to the effective calorie target (incl. earn-back).
     },
     profile: {
       heightCm: 178,

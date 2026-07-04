@@ -578,7 +578,7 @@ export default function Nutrition() {
   const targetInfo = dailyTargetInfo({ goals, profile, prefs, metrics, foods, workouts }, date);
   const water = waterByDate[date] ?? 0;
   const remaining = targetInfo.target - day.calories;
-  const macros = macroTargets(goals, targetInfo.recommendation);
+  const macros = macroTargets(goals, targetInfo.macros);
 
   const favoriteKeys = useMemo(() => new Set(favoriteFoods.map(quickFoodKey)), [favoriteFoods]);
 

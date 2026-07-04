@@ -50,6 +50,21 @@ export interface Recommendation {
  * Returns null when the profile is incomplete (needs height, age, sex)
  * or there is no current weight to work from.
  */
+/**
+ * Macro split for a calorie target: protein min(1.8 g/kg, 35% kcal), fat 27.5% kcal,
+ * carbs the remainder. Pure function of (kcal, body weight) so it can be re-sized to
+ * whatever calorie budget the app tracks against (e.g. after exercise earn-back).
+ */
+export function macrosForCalories(
+  targetCalories: number,
+  currentWeightKg: number,
+): { proteinG: number; carbsG: number; fatG: number } {
+  const proteinG = Math.round(Math.min(1.8 * currentWeightKg, (0.35 * targetCalories) / 4));
+  const fatG = Math.round((0.275 * targetCalories) / 9);
+  const carbsG = Math.max(0, Math.round((targetCalories - proteinG * 4 - fatG * 9) / 4));
+  return { proteinG, carbsG, fatG };
+}
+
 /** Goal-adjusted target from a TDEE (shared by the formula and adaptive paths). */
 export function targetsFromTdee(
   tdee: number,
@@ -73,11 +88,13 @@ export function targetsFromTdee(
     flooredAt = MIN_DAILY_KCAL;
   }
 
-  const proteinG = Math.round(Math.min(1.8 * currentWeightKg, (0.35 * targetCalories) / 4));
-  const fatG = Math.round((0.275 * targetCalories) / 9);
-  const carbsG = Math.max(0, Math.round((targetCalories - proteinG * 4 - fatG * 9) / 4));
-
-  return { targetCalories, dailyDelta, direction, flooredAt, macros: { proteinG, carbsG, fatG } };
+  return {
+    targetCalories,
+    dailyDelta,
+    direction,
+    flooredAt,
+    macros: macrosForCalories(targetCalories, currentWeightKg),
+  };
 }
 
 export function recommend(
@@ -122,18 +139,17 @@ export interface MacroTargets {
 
 /**
  * Effective daily macro targets (grams): a manually-set goal value wins for each
- * macro; otherwise the recommended split is used when it can be computed. A macro
- * with neither stays undefined (no target to track against).
+ * macro; otherwise the auto split (sized to the effective calorie target) is used.
+ * A macro with neither stays undefined (no target to track against).
  */
 export function macroTargets(
   goals: Pick<Goals, 'proteinTargetG' | 'carbsTargetG' | 'fatTargetG'>,
-  recommendation: Recommendation | null,
+  auto: MacroTargets,
 ): MacroTargets {
-  const m = recommendation?.macros;
   return {
-    proteinG: goals.proteinTargetG ?? m?.proteinG,
-    carbsG: goals.carbsTargetG ?? m?.carbsG,
-    fatG: goals.fatTargetG ?? m?.fatG,
+    proteinG: goals.proteinTargetG ?? auto.proteinG,
+    carbsG: goals.carbsTargetG ?? auto.carbsG,
+    fatG: goals.fatTargetG ?? auto.fatG,
   };
 }
 
@@ -149,6 +165,12 @@ export interface DailyTargetInfo {
   recommendation: Recommendation | null;
   /** Present when adaptive TDEE is on and computable. */
   adaptive: AdaptiveTdee | null;
+  /**
+   * Auto macro split sized to the EFFECTIVE target (base + earn-back), so macro
+   * tracking stays consistent with the calorie target. All-undefined without a
+   * weigh-in/profile to compute from.
+   */
+  macros: MacroTargets;
 }
 
 /**
@@ -186,6 +208,14 @@ export function dailyTargetInfo(
   const burnKcal = data.prefs.earnBackExercise
     ? Math.round(dayBurnKcal(data.workouts, date, currentWeightKg ?? 70))
     : 0;
+  const target = baseTarget + burnKcal;
 
-  return { date, baseTarget, burnKcal, target: baseTarget + burnKcal, source, recommendation: rec, adaptive };
+  // Size the auto macro split to the EFFECTIVE target (incl. earn-back), so macros
+  // don't read as maxed-out while calories remain. All-undefined without a weigh-in.
+  const macros: MacroTargets =
+    rec && currentWeightKg != null
+      ? macrosForCalories(target, currentWeightKg)
+      : { proteinG: undefined, carbsG: undefined, fatG: undefined };
+
+  return { date, baseTarget, burnKcal, target, source, recommendation: rec, adaptive, macros };
 }
