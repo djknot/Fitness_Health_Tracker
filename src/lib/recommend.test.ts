@@ -4,11 +4,11 @@ import { addDays } from './dates';
 import {
   calorieTargetInfo,
   dailyTargetInfo,
+  macrosForCalories,
   macroTargets,
   mifflinStJeorBmr,
   recommend,
   targetsFromTdee,
-  type Recommendation,
 } from './recommend';
 
 const maleProfile: Profile = {
@@ -263,6 +263,26 @@ describe('dailyTargetInfo', () => {
     expect(info.target).toBe(info.baseTarget + 187);
   });
 
+  it('sizes macros to the effective target and grows them with earn-back', () => {
+    const noBurn = dailyTargetInfo(base, TODAY, TODAY);
+    expect(noBurn.macros).toEqual(macrosForCalories(noBurn.target, 80));
+
+    const withBurn = dailyTargetInfo(
+      { ...base, prefs: { ...basePrefs, earnBackExercise: true }, workouts: [walkWorkout] },
+      TODAY,
+      TODAY,
+    );
+    expect(withBurn.burnKcal).toBeGreaterThan(0);
+    expect(withBurn.macros).toEqual(macrosForCalories(withBurn.target, 80));
+    // the earned-back calories lift the carb target (protein stays bodyweight-capped)
+    expect(withBurn.macros.carbsG!).toBeGreaterThan(noBurn.macros.carbsG!);
+  });
+
+  it('has all-undefined macros without a weigh-in to size them from', () => {
+    const info = dailyTargetInfo({ ...base, metrics: [] }, TODAY, TODAY);
+    expect(info.macros).toEqual({ proteinG: undefined, carbsG: undefined, fatG: undefined });
+  });
+
   it('falls back to manual with a 70 kg burn estimate when there are no weigh-ins', () => {
     const profile = { ...maleProfile, useRecommendedTarget: true };
     const prefs = { ...basePrefs, earnBackExercise: true };
@@ -279,27 +299,43 @@ describe('dailyTargetInfo', () => {
   });
 });
 
+describe('macrosForCalories', () => {
+  it('sizes the split to the calorie budget (protein bodyweight-capped)', () => {
+    // 2000 kcal, 80 kg: protein min(144, 175)=144, fat round(0.275*2000/9)=61,
+    // carbs (2000 - 576 - 549)/4 = 219.
+    expect(macrosForCalories(2000, 80)).toEqual({ proteinG: 144, carbsG: 219, fatG: 61 });
+  });
+
+  it('grows carbs/fat with more calories while protein stays bodyweight-capped', () => {
+    const lo = macrosForCalories(1600, 80);
+    const hi = macrosForCalories(2600, 80);
+    expect(hi.carbsG).toBeGreaterThan(lo.carbsG);
+    expect(hi.fatG).toBeGreaterThan(lo.fatG);
+    expect(hi.proteinG).toBe(144); // 1.8 × 80, the cap
+  });
+});
+
 describe('macroTargets', () => {
-  const rec = { macros: { proteinG: 120, carbsG: 200, fatG: 60 } } as Recommendation;
+  const auto = { proteinG: 120, carbsG: 200, fatG: 60 };
 
   it('uses manual goal values when they are set', () => {
-    expect(macroTargets({ proteinTargetG: 180, carbsTargetG: 150, fatTargetG: 50 }, rec)).toEqual({
+    expect(macroTargets({ proteinTargetG: 180, carbsTargetG: 150, fatTargetG: 50 }, auto)).toEqual({
       proteinG: 180,
       carbsG: 150,
       fatG: 50,
     });
   });
 
-  it('falls back to the recommended split for unset macros', () => {
-    expect(macroTargets({ proteinTargetG: 180 }, rec)).toEqual({
+  it('falls back to the auto split for unset macros', () => {
+    expect(macroTargets({ proteinTargetG: 180 }, auto)).toEqual({
       proteinG: 180,
       carbsG: 200,
       fatG: 60,
     });
   });
 
-  it('is all-undefined with no manual targets and no recommendation', () => {
-    expect(macroTargets({}, null)).toEqual({
+  it('is all-undefined with no manual targets and no auto split', () => {
+    expect(macroTargets({}, {})).toEqual({
       proteinG: undefined,
       carbsG: undefined,
       fatG: undefined,

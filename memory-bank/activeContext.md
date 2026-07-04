@@ -31,6 +31,13 @@ post-v0.2 follow-ups requested by the user.
   `recommend.macroTargets(goals, rec)` = manual ?? recommended split; Nutrition
   daily summary shows per-macro consumed/target meters. backup/sample/emptyData
   cover the new slice. 143 unit tests; Playwright e2e 51/51.
+- Follow-up 3c (DONE): macro/calorie CONSISTENCY. Bug: macro targets were sized to
+  baseTarget while the calorie target included earn-back, so macros read ~100% while
+  calories remained. Fix: extracted `macrosForCalories(kcal, weightKg)`; `dailyTargetInfo`
+  now exposes `.macros` = auto split sized to the EFFECTIVE target (base+earn-back);
+  `macroTargets(goals, auto)` merges manual ?? auto (manual still fixed/overrides).
+  Nutrition uses targetInfo.macros. Sample no longer sets manual macro targets (so it
+  demos the consistent auto split). 147 tests.
 - Follow-up 3b (DONE): saved-meal DISCOVERABILITY — user couldn't find saved meals
   to select. Added a "Meals" chip row inside each meal section's add area
   (AddFoodRow), filtered to that section's meal; tapping logs the whole meal there.
