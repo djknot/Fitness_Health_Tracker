@@ -11,6 +11,11 @@ nothing because the server itself was stale. deploy.yml now has a final step
 --exit-status`, and `gh run rerun --failed` up to 3× — so a flake auto-recovers and
 a genuine failure shows red instead of passing silently. Kept the branch-push route
 (actions/deploy-pages was abandoned earlier); this just babysits GitHub's step.
+Race fix: the first cut matched the publish run only by workflow name, so it grabbed
+the PREVIOUS already-successful run and passed in ~2s without watching this deploy.
+Now the publish step records the pushed gh-pages commit (`PAGES_SHA` via `$GITHUB_ENV`)
+and the verify step matches `.headSha == env.SHA` — a pages-build-deployment run's
+head_sha equals the gh-pages commit it serves, so we always watch OUR own run.
 v0.2 edit-in-place seeds inputs from stored values; some (e.g. sleep 6.4 h against
 `step=0.25`) aren't step-multiples, so native constraint validation raised a
 stepMismatch and the form silently refused to submit — the metrics row editor was
