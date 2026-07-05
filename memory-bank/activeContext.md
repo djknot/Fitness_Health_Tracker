@@ -31,6 +31,12 @@ post-v0.2 follow-ups requested by the user.
   `recommend.macroTargets(goals, rec)` = manual ?? recommended split; Nutrition
   daily summary shows per-macro consumed/target meters. backup/sample/emptyData
   cover the new slice. 143 unit tests; Playwright e2e 51/51.
+- Follow-up 4 (DONE): two UI tweaks. (1) Dashboard weight-trend gained a range
+  picker (1M/3M/6M/1Y/All, default 3M — was fixed 30d); WeightChart already handles
+  long/sparse series (hides dots >31 pts, ChartEmpty <2). (2) Chip strips
+  (favorites/recents/meals) used overflow-x-auto pb-0.5 so the overlay scrollbar
+  covered chips — added a `.scroll-row` utility (thin styled scrollbar) + pb-2 in
+  index.css. e2e 53/53.
 - Follow-up 3c (DONE): macro/calorie CONSISTENCY. Bug: macro targets were sized to
   baseTarget while the calorie target included earn-back, so macros read ~100% while
   calories remained. Fix: extracted `macrosForCalories(kcal, weightKg)`; `dailyTargetInfo`
