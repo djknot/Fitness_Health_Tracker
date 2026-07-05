@@ -4,6 +4,9 @@ name: Deploy to GitHub Pages
 # branch (Settings → Pages → Source: Deploy from a branch → gh-pages).
 # The actions/deploy-pages API route was abandoned — it rejected every
 # deployment for this site with a generic error; the branch route works.
+# A final step watches GitHub's own "pages build and deployment" and re-runs it
+# on the transient "Deployment failed, try again later" flake, so a hiccup can't
+# silently leave the live site on an old build.
 
 on:
   push:
@@ -12,6 +15,8 @@ on:
 
 permissions:
   contents: write
+  # actions: write lets the verify step re-run GitHub's Pages publish on a flake.
+  actions: write
 
 concurrency:
   group: pages
@@ -44,3 +49,39 @@ jobs:
           git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # GitHub's own "pages build and deployment" (which actually serves the site)
+      # occasionally fails with a transient "Deployment failed, try again later",
+      # silently leaving the live site on the previous build. Watch that run and
+      # re-run it a few times so a flake can't strand a deploy unnoticed.
+      - name: Verify Pages publish and retry transient failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          echo "Waiting for GitHub's Pages publish to start…"
+          run_id=""
+          for _ in $(seq 1 18); do
+            run_id=$(gh run list --branch gh-pages --limit 20 \
+              --json databaseId,workflowName,name \
+              --jq 'map(select(((.workflowName // "") + " " + (.name // "")) | test("pages build and deployment")))[0].databaseId // empty' \
+              2>/dev/null || true)
+            [ -n "$run_id" ] && break
+            sleep 10
+          done
+          if [ -z "$run_id" ]; then
+            echo "::warning::Couldn't find the Pages publish run — skipping auto-retry (the build+push already succeeded)."
+            exit 0
+          fi
+          echo "Watching Pages publish run $run_id"
+          for attempt in 1 2 3; do
+            if gh run watch "$run_id" --exit-status >/dev/null 2>&1; then
+              echo "✅ GitHub Pages published successfully (attempt $attempt)."
+              exit 0
+            fi
+            echo "::warning::Pages publish attempt $attempt failed — re-running…"
+            gh run rerun "$run_id" --failed >/dev/null 2>&1 || gh run rerun "$run_id" >/dev/null 2>&1 || true
+            sleep 20
+          done
+          echo "::error::GitHub Pages publish still failing after 3 attempts — re-run this workflow to try again."
+          exit 1

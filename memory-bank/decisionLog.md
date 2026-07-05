@@ -2,7 +2,15 @@
 
 Newest first. Format: date — decision — rationale/tradeoff.
 
-## 2026-07-03 — Numeric entry validation: `step="any"` + native min/max (not noValidate)
+## 2026-07-05 — Deploy self-heals GitHub's flaky Pages publish
+GitHub's own "pages build and deployment" (runs after we force-push gh-pages) hit
+the transient "Deployment failed, try again later" once (1 of 13), silently leaving
+the live site a version behind — a real user was stranded and cache-clearing did
+nothing because the server itself was stale. deploy.yml now has a final step
+(needs `actions: write`) that finds that publish run via `gh`, `gh run watch
+--exit-status`, and `gh run rerun --failed` up to 3× — so a flake auto-recovers and
+a genuine failure shows red instead of passing silently. Kept the branch-push route
+(actions/deploy-pages was abandoned earlier); this just babysits GitHub's step.
 v0.2 edit-in-place seeds inputs from stored values; some (e.g. sleep 6.4 h against
 `step=0.25`) aren't step-multiples, so native constraint validation raised a
 stepMismatch and the form silently refused to submit — the metrics row editor was
