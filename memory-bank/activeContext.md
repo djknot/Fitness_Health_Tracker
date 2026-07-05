@@ -49,6 +49,16 @@ post-v0.2 follow-ups requested by the user.
   (AddFoodRow), filtered to that section's meal; tapping logs the whole meal there.
   Top "Saved meals" card kept for delete/overview. (Repro confirmed no bug: fresh
   + v2-returning users both save/persist correctly — it was purely placement.)
+- Follow-up 5 (DONE): **deploy self-heals GitHub's flaky Pages publish.** A real user
+  was stranded a build behind when GitHub's "pages build and deployment" hit the
+  transient "Deployment failed, try again later" (cache-clearing was useless — the
+  server was stale). deploy.yml gained an `actions: write` verify step that watches
+  that publish run and `gh run rerun --failed` up to 3×. First cut had a RACE (matched
+  the run by name → grabbed the previous already-successful run, passed in ~2s without
+  watching this deploy); fixed by recording the pushed gh-pages commit (`PAGES_SHA` via
+  `$GITHUB_ENV`) and matching `.headSha == env.SHA`. PROVEN on the live deploy (run
+  28725230621): verify step took 28s, polled → found OUR new publish run 28725241401
+  (SHA 8d6c38ae) → watched it to ✅ success. Live site current (gh-pages = deploy f35d67d).
 
 ## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components
@@ -87,10 +97,14 @@ post-v0.2 follow-ups requested by the user.
   Light/dark/mobile + dark-heatmap screenshots reviewed.
 
 ## Next immediate steps
-- v0.2 is feature-complete, reviewed, and verified on this branch. Optional polish
-  backlog remains (bundle code-splitting, service worker).
+- v0.2 + all follow-ups (1–5) shipped, merged to default, and live. Deploy safeguard
+  now reliably auto-retries GitHub's Pages flake (race fixed + proven on a live run).
+- Optional polish backlog remains (bundle code-splitting, service worker).
+- Branch discipline: each follow-up's PR was merged, so the NEXT change restarts this
+  branch from post-merge default (`git checkout -B <branch> origin/<default>`) — a
+  merged PR is finished; never stack new commits on already-merged history.
 - NOTE: this branch does NOT auto-deploy (the Pages workflow triggers only on the
-  default branch) — merging to default publishes v0.2 to the live URL.
+  default branch) — merging to default publishes to the live URL.
 
 ## Active obstacles
 None. Sandbox: no camera + OFF/USDA unreachable → barcode camera path and remote
