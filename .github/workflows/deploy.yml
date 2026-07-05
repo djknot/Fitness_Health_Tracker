@@ -47,6 +47,11 @@ jobs:
           git add -A
           git commit -m "deploy: ${GITHUB_SHA}"
           git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+          # Record the exact gh-pages commit we just pushed. GitHub's own
+          # "pages build and deployment" run carries THIS commit as its head_sha,
+          # so the verify step below can watch our own publish run rather than a
+          # previous one (which raced and passed instantly before this fix).
+          echo "PAGES_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -58,22 +63,28 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          # The gh-pages commit we just pushed; its publish run has this head_sha.
+          SHA: ${{ env.PAGES_SHA }}
         run: |
-          echo "Waiting for GitHub's Pages publish to start…"
+          echo "Waiting for GitHub's Pages publish of ${SHA} to start…"
           run_id=""
-          for _ in $(seq 1 18); do
-            run_id=$(gh run list --branch gh-pages --limit 20 \
-              --json databaseId,workflowName,name \
-              --jq 'map(select(((.workflowName // "") + " " + (.name // "")) | test("pages build and deployment")))[0].databaseId // empty' \
+          # Match the publish run by OUR gh-pages commit SHA — otherwise we could
+          # grab a previous, already-successful run that GitHub hasn't superseded
+          # yet and pass in ~2s without ever watching this deploy (the old race).
+          # Poll up to ~5 min: GitHub can lag before creating the run.
+          for _ in $(seq 1 30); do
+            run_id=$(gh run list --branch gh-pages --limit 30 \
+              --json databaseId,headSha,workflowName,name \
+              --jq 'map(select(.headSha == env.SHA and (((.workflowName // "") + " " + (.name // "")) | test("pages build and deployment"))))[0].databaseId // empty' \
               2>/dev/null || true)
             [ -n "$run_id" ] && break
             sleep 10
           done
           if [ -z "$run_id" ]; then
-            echo "::warning::Couldn't find the Pages publish run — skipping auto-retry (the build+push already succeeded)."
+            echo "::warning::Couldn't find the Pages publish run for ${SHA} — skipping auto-retry (the build+push already succeeded)."
             exit 0
           fi
-          echo "Watching Pages publish run $run_id"
+          echo "Watching Pages publish run $run_id (commit ${SHA})"
           for attempt in 1 2 3; do
             if gh run watch "$run_id" --exit-status >/dev/null 2>&1; then
               echo "✅ GitHub Pages published successfully (attempt $attempt)."
