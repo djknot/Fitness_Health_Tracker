@@ -90,9 +90,20 @@
   guards the camera-detect callback against resolving after unmount (was an
   unabortable post-close lookup that overwrote the food form).
 
+## v0.2 follow-ups (shipped + live) — same branch, per-item PRs merged to default
+- Manual workout-calorie override (`Workout.caloriesKcal?`; burn/earn-back honor it).
+- Calorie clarity: Dashboard "Calories left" headline + Nutrition remaining figure;
+  nutrition inputs show units OUTSIDE the box; Amount field g/ml/oz selector (toGrams).
+- Saved meals (`savedMeals` slice, persist v2→v3) + Settings macro targets, tracked
+  per-macro; discoverability fix (per-section "Meals" chip row).
+- Macro/calorie consistency: macros sized to the EFFECTIVE target (base+earn-back) via
+  `macrosForCalories`, so they no longer read ~100% while calories remain.
+- Dashboard weight-trend range picker (1M–All); `.scroll-row` fixes chip-strip scrollbar overlap.
+- Deploy safeguard: verify step auto-retries GitHub's flaky Pages publish; race fixed
+  by matching the publish run via the pushed gh-pages commit SHA (proven on a live deploy).
+
 ## Known gaps / backlog
 - No service worker yet (app shell not offline-cacheable; manifest-only PWA).
-- No edit for logged entries (append/delete only).
 - Water stays ml in imperial mode; cardio distance stays km (logged decisions).
 - No PNG icons for iOS home screen (SVG only).
 - Bundle is one ~700 kB chunk (recharts) — add manualChunks/code-splitting later.
