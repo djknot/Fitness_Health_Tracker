@@ -58,7 +58,7 @@ function QuickChips({
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="mt-3 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap pb-0.5">
+    <div className="scroll-row mt-3 flex items-center gap-1.5 whitespace-nowrap pb-2">
       <span className="shrink-0 text-[11px] font-medium text-muted">{label}</span>
       {items.map((qf) => (
         <button
@@ -220,7 +220,7 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
   return (
     <div>
       {sectionMeals.length > 0 && (
-        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap pb-0.5">
+        <div className="scroll-row mt-3 flex items-center gap-1.5 whitespace-nowrap pb-2">
           <span className="shrink-0 text-[11px] font-medium text-muted">Meals</span>
           {sectionMeals.map((m) => (
             <button

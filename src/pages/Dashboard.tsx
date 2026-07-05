@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Droplets, Dumbbell, Flame, Utensils } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
@@ -25,6 +25,15 @@ import { CheckinCard } from '../components/checkin/CheckinCard';
 import { WeightChart } from '../components/WeightChart';
 import { CaloriesChart } from '../components/CaloriesChart';
 
+/** Selectable windows for the Dashboard weight-trend chart (days; null = all time). */
+const WEIGHT_RANGES: { label: string; days: number | null }[] = [
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
+  { label: '6M', days: 182 },
+  { label: '1Y', days: 365 },
+  { label: 'All', days: null },
+];
+
 function greeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -43,6 +52,7 @@ export default function Dashboard() {
   const prefs = useAppStore((s) => s.prefs);
   const dataVersion = useAppStore((s) => s.dataVersion);
   const replaceAll = useAppStore((s) => s.replaceAll);
+  const [weightDays, setWeightDays] = useState<number | null>(90);
 
   const today = todayISO();
   const hasData =
@@ -79,11 +89,15 @@ export default function Dashboard() {
   const water = waterByDate[today] ?? 0;
 
   const snap = latestWeight(metrics);
-  let weightSub = 'Last 30 days';
-  if (snap) weightSub += ` · now ${formatWeight(snap.weightKg, goals.units)}`;
+  const weightParts: string[] = [];
+  if (snap) weightParts.push(`now ${formatWeight(snap.weightKg, goals.units)}`);
   if (goals.targetWeightKg != null) {
-    weightSub += ` · goal ${formatWeight(goals.targetWeightKg, goals.units)}`;
+    weightParts.push(`goal ${formatWeight(goals.targetWeightKg, goals.units)}`);
   }
+  const weightSub = weightParts.length ? weightParts.join(' · ') : undefined;
+  const weightData = weightSeries(metrics).filter(
+    (p) => weightDays == null || p.date >= addDays(today, -(weightDays - 1)),
+  );
 
   let deltaAction: ReactNode = null;
   if (snap && snap.deltaKg != null) {
@@ -187,11 +201,24 @@ export default function Dashboard() {
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <section className="card">
           <CardTitle title="Weight trend" sub={weightSub} action={deltaAction} />
-          <WeightChart
-            series={weightSeries(metrics).filter((p) => p.date >= addDays(today, -29))}
-            targetWeightKg={goals.targetWeightKg}
-            units={goals.units}
-          />
+          <div className="mb-2 flex flex-wrap gap-1" role="group" aria-label="Weight trend range">
+            {WEIGHT_RANGES.map((r) => (
+              <button
+                key={r.label}
+                type="button"
+                aria-pressed={weightDays === r.days}
+                onClick={() => setWeightDays(r.days)}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
+                  weightDays === r.days
+                    ? 'bg-accent text-white'
+                    : 'bg-page text-ink2 hover:bg-accent-wash'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <WeightChart series={weightData} targetWeightKg={goals.targetWeightKg} units={goals.units} />
         </section>
         <section className="card">
           {/* Reference line = base target (before today's earn-back), so it reads
