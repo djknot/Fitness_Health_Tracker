@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BookmarkPlus, X } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import type { Exercise, ExerciseKind, Workout } from '../../types';
+import type { Exercise, ExerciseKind, Workout, WorkoutTemplate } from '../../types';
 import { relativeDayLabel, todayISO } from '../../lib/dates';
 import { displayToKg, kgToDisplay, weightUnit } from '../../lib/units';
 import { MINUTES_PER_SET } from '../../lib/burn';
@@ -62,10 +62,6 @@ export interface BuilderSeed {
   exercises: Exercise[];
 }
 
-export function emptySeed(): BuilderSeed {
-  return { editing: null, date: todayISO(), name: '', exercises: [] };
-}
-
 const defaultSet = (): DraftSet => ({ reps: '10', weight: '' });
 
 export default function WorkoutBuilder({
@@ -80,6 +76,7 @@ export default function WorkoutBuilder({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const goals = useAppStore((s) => s.goals);
+  const templates = useAppStore((s) => s.templates);
   const addWorkout = useAppStore((s) => s.addWorkout);
   const updateWorkout = useAppStore((s) => s.updateWorkout);
   const addTemplate = useAppStore((s) => s.addTemplate);
@@ -113,7 +110,9 @@ export default function WorkoutBuilder({
     };
   };
 
-  const [date, setDate] = useState(seed.date);
+  // The workout is always logged to the day you're viewing — DateNav is the date
+  // control, and editing opens from that day's card, so seed.date already equals it.
+  const date = seed.date;
   const [name, setName] = useState(seed.name);
   const [exercises, setExercises] = useState<DraftExercise[]>(() =>
     seed.exercises.length > 0 ? seed.exercises.map(toDraft) : [makeExercise()],
@@ -211,9 +210,19 @@ export default function WorkoutBuilder({
     addTemplate({ name: name.trim(), exercises: buildExercises() });
   };
 
+  /** Load a saved routine into the draft (name + a deep copy of its exercises). */
+  const loadTemplate = (t: WorkoutTemplate) => {
+    if (dirty && !window.confirm(`Replace the current draft with "${t.name}"?`)) return;
+    setName(t.name);
+    setExercises(t.exercises.length > 0 ? t.exercises.map(toDraft) : [makeExercise()]);
+  };
+
   return (
     <section className="card">
-      <CardTitle title={seed.editing ? 'Edit workout' : 'Log workout'} />
+      <CardTitle
+        title={seed.editing ? 'Edit workout' : 'Log workout'}
+        sub={seed.editing ? undefined : `For ${relativeDayLabel(date)}`}
+      />
       {seed.editing && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-accent-wash px-3 py-2">
           <p className="text-sm text-ink2">
@@ -227,26 +236,35 @@ export default function WorkoutBuilder({
         </div>
       )}
       <div className="flex flex-col gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Date">
-            <TextInput
-              type="date"
-              value={date}
-              max={todayISO()}
+        {!seed.editing && templates.length > 0 && (
+          <Field label="Start from template">
+            <Select
+              aria-label="Start from template"
+              value=""
               onChange={(e) => {
-                const v = e.target.value;
-                if (v && v <= todayISO()) setDate(v);
+                const t = templates.find((x) => x.id === e.target.value);
+                if (t) loadTemplate(t);
+                e.currentTarget.value = '';
               }}
-            />
+            >
+              <option value="">Choose a saved routine…</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} · {t.exercises.length}{' '}
+                  {t.exercises.length === 1 ? 'exercise' : 'exercises'}
+                </option>
+              ))}
+            </Select>
           </Field>
-          <Field label="Workout name">
-            <TextInput
-              value={name}
-              placeholder="Push day"
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Field>
-        </div>
+        )}
+
+        <Field label="Workout name">
+          <TextInput
+            value={name}
+            placeholder="Push day"
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
 
         <Field label="Calories burned (optional)">
           <TextInput

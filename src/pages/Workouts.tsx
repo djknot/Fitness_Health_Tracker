@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { BookmarkPlus, Dumbbell, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import type { Exercise, Units, Workout, WorkoutTemplate } from '../types';
-import { relativeDayLabel, todayISO } from '../lib/dates';
+import type { Exercise, Units, Workout } from '../types';
+import { todayISO } from '../lib/dates';
 import { kgToDisplay, weightUnit } from '../lib/units';
 import {
   latestWeight,
@@ -14,9 +14,9 @@ import {
 import { workoutBurnKcal } from '../lib/burn';
 import { uid } from '../lib/id';
 import { Button, EmptyState, IconButton, PageHeader } from '../components/ui';
-import WorkoutBuilder, { emptySeed } from '../components/workouts/WorkoutBuilder';
+import { DateNav } from '../components/DateNav';
+import WorkoutBuilder from '../components/workouts/WorkoutBuilder';
 import type { BuilderSeed } from '../components/workouts/WorkoutBuilder';
-import TemplatesCard from '../components/workouts/TemplatesCard';
 
 /** Fresh exercise ids + copied sets arrays, so templates never share references with workouts. */
 function cloneExercises(exercises: Exercise[]): Exercise[] {
@@ -134,6 +134,7 @@ export default function Workouts() {
   const workouts = useAppStore((s) => s.workouts);
   const metrics = useAppStore((s) => s.metrics);
   const goals = useAppStore((s) => s.goals);
+  const selectedDate = useAppStore((s) => s.selectedDate);
   const deleteWorkout = useAppStore((s) => s.deleteWorkout);
 
   const [builder, setBuilder] = useState<{ seed: BuilderSeed; nonce: number } | null>(null);
@@ -150,6 +151,14 @@ export default function Workouts() {
     setBuilder({ seed, nonce: nonceRef.current });
   };
 
+  /** A blank draft dated to the day you are currently viewing. */
+  const newSeed = (): BuilderSeed => ({
+    editing: null,
+    date: selectedDate,
+    name: '',
+    exercises: [],
+  });
+
   const closeBuilder = () => {
     dirtyRef.current = false;
     setBuilder(null);
@@ -158,11 +167,6 @@ export default function Workouts() {
   /** True when it is safe to replace the draft: builder closed, pristine, or user confirmed. */
   const confirmReplaceDraft = (message: string) =>
     builder == null || !dirtyRef.current || window.confirm(message);
-
-  const startFromTemplate = (t: WorkoutTemplate) => {
-    if (!confirmReplaceDraft(`Replace the current draft with "${t.name}"?`)) return;
-    openWith({ editing: null, date: todayISO(), name: t.name, exercises: t.exercises });
-  };
 
   const startEdit = (w: Workout) => {
     if (!confirmReplaceDraft(`Discard the current draft and edit "${w.name}"?`)) return;
@@ -176,34 +180,34 @@ export default function Workouts() {
   };
 
   const weightKg = useMemo(() => latestWeight(metrics)?.weightKg ?? 70, [metrics]);
-  const thisWeekCount = workoutsInWeekOf(workouts, todayISO()).length;
+  // "This week" is a present-tense metric — always the real current week, not the
+  // week of whatever past date is being browsed.
+  const weekCount = workoutsInWeekOf(workouts, todayISO()).length;
 
-  const grouped = useMemo(() => {
-    const byDate = new Map<string, Workout[]>();
-    const sorted = [...workouts].sort((a, b) => b.date.localeCompare(a.date));
-    for (const w of sorted) {
-      const list = byDate.get(w.date);
-      if (list) list.push(w);
-      else byDate.set(w.date, [w]);
-    }
-    return [...byDate.entries()];
-  }, [workouts]);
+  // Only the selected day's workouts — history is reached by changing the date.
+  const dayWorkouts = useMemo(
+    () => workouts.filter((w) => w.date === selectedDate),
+    [workouts, selectedDate],
+  );
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
       <PageHeader
         title="Workouts"
-        sub={`${thisWeekCount} of ${goals.weeklyWorkouts} workouts this week`}
+        sub={`${weekCount} of ${goals.weeklyWorkouts} workouts this week`}
         action={
-          <Button
-            onClick={() => {
-              if (!builder) openWith(emptySeed());
-              else if (confirmReplaceDraft('Discard the current draft?')) closeBuilder();
-            }}
-          >
-            <Plus size={16} />
-            Log workout
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <DateNav />
+            <Button
+              onClick={() => {
+                if (!builder) openWith(newSeed());
+                else if (confirmReplaceDraft('Discard the current draft?')) closeBuilder();
+              }}
+            >
+              <Plus size={16} />
+              Log workout
+            </Button>
+          </div>
         }
       />
 
@@ -216,18 +220,16 @@ export default function Workouts() {
         />
       )}
 
-      <TemplatesCard onStart={startFromTemplate} />
-
-      {workouts.length === 0 ? (
+      {dayWorkouts.length === 0 ? (
         <section className="card">
           <EmptyState
             icon={<Dumbbell size={22} />}
-            title="No workouts yet"
-            body="Log your first session to start building history."
+            title="No workouts on this day"
+            body="Log a session for this day, or use the date picker to view another day."
             action={
               <Button
                 onClick={() => {
-                  if (!builder) openWith(emptySeed());
+                  if (!builder) openWith(newSeed());
                 }}
               >
                 Log workout
@@ -236,23 +238,18 @@ export default function Workouts() {
           />
         </section>
       ) : (
-        grouped.map(([date, dayWorkouts]) => (
-          <div key={date} className="flex flex-col gap-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-              {relativeDayLabel(date)}
-            </h2>
-            {dayWorkouts.map((w) => (
-              <WorkoutCard
-                key={w.id}
-                workout={w}
-                units={goals.units}
-                weightKg={weightKg}
-                onEdit={() => startEdit(w)}
-                onDelete={() => handleDelete(w)}
-              />
-            ))}
-          </div>
-        ))
+        <div className="flex flex-col gap-2">
+          {dayWorkouts.map((w) => (
+            <WorkoutCard
+              key={w.id}
+              workout={w}
+              units={goals.units}
+              weightKg={weightKg}
+              onEdit={() => startEdit(w)}
+              onDelete={() => handleDelete(w)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

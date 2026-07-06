@@ -22,3 +22,6 @@ npm-debug.log*
 
 # Test artifacts
 coverage/
+
+# Local e2e scripts, screenshots, scratch work (never shipped)
+scratchpad/

@@ -20,6 +20,7 @@ import { Button, CardTitle, Field, PageHeader, Select, TextInput } from '../comp
 import AppearanceCard from '../components/settings/AppearanceCard';
 import CustomFoods from '../components/settings/CustomFoods';
 import FoodDatabaseCard from '../components/settings/FoodDatabaseCard';
+import SavedItemsCard from '../components/settings/SavedItemsCard';
 import TargetOptions from '../components/settings/TargetOptions';
 import { numOrUndefined, positiveOr, useSavedFlash } from '../components/settings/shared';
 
@@ -384,6 +385,8 @@ function SettingsView() {
       </section>
 
       <TargetOptions />
+
+      <SavedItemsCard />
 
       <CustomFoods />
 

@@ -2,6 +2,26 @@
 
 Newest first. Format: date — decision — rationale/tradeoff.
 
+## 2026-07-06 — One global selected date; day-scoped vs current-status split
+The day-to-day pages are driven by a single non-persisted store field `selectedDate`
+(defaults to today, resets each load — it's a navigation gesture, not a saved pref)
+via a shared `DateNav`. It's deliberately NOT in `partialize`, and `replaceAll`/
+`resetAll` use Zustand's shallow-merge `set` with an `AppData` payload that has no
+`selectedDate`, so import/sample/reset preserve the day you're viewing. Rule for what
+follows the date: genuinely day-scoped data (a day's calories, water, food entries,
+workouts, and the check-in) follows `selectedDate`; present-tense STATUS metrics
+("workouts this week", logging streak) and the trend charts stay anchored to the real
+`todayISO()` so they don't silently rewind while browsing history. Consequences that
+fell out of removing the "recent/prior-days" lists the user didn't want: workouts now
+log to the viewed day (the builder's editable Date field was removed — it could strand
+a workout on an unseen date), and the check-in only prefills the latest weight for
+today (a past-day prefill + blind save fabricated a weigh-in). Reusable items
+(templates, saved meals) are created on their pages but MANAGED (deleted) in one
+Settings card, keeping the day-to-day pages uncluttered. Recents/favorites/saved-meals
+moved from chip strips to per-section `<select>` pickers (log-and-reset controlled at
+`value=""`). Dashboard stat cards became `<button>`s that navigate (Meter is a
+non-interactive `role="meter"` div, so no nested-interactive issue).
+
 ## 2026-07-05 — Deploy self-heals GitHub's flaky Pages publish
 GitHub's own "pages build and deployment" (runs after we force-push gh-pages) hit
 the transient "Deployment failed, try again later" once (1 of 13), silently leaving
