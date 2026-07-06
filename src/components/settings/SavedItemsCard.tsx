@@ -1,8 +1,7 @@
 import { Dumbbell, Utensils, Trash2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { capitalize } from '../../lib/strings';
 import { CardTitle, IconButton } from '../ui';
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * Manage the reusable items created elsewhere in the app: workout templates

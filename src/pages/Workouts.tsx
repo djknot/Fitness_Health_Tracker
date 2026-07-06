@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { BookmarkPlus, Dumbbell, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { Exercise, Units, Workout } from '../types';
+import { todayISO } from '../lib/dates';
 import { kgToDisplay, weightUnit } from '../lib/units';
 import {
   latestWeight,
@@ -179,7 +180,9 @@ export default function Workouts() {
   };
 
   const weightKg = useMemo(() => latestWeight(metrics)?.weightKg ?? 70, [metrics]);
-  const weekCount = workoutsInWeekOf(workouts, selectedDate).length;
+  // "This week" is a present-tense metric — always the real current week, not the
+  // week of whatever past date is being browsed.
+  const weekCount = workoutsInWeekOf(workouts, todayISO()).length;
 
   // Only the selected day's workouts — history is reached by changing the date.
   const dayWorkouts = useMemo(

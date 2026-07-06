@@ -88,9 +88,11 @@ export default function Dashboard() {
     selectedDate,
   );
   const remaining = targetInfo.target - day.calories;
-  const weekCount = workoutsInWeekOf(workouts, selectedDate).length;
-  const streak = logStreak(loggedDates({ workouts, foods, metrics, waterByDate }), selectedDate);
   const water = waterByDate[selectedDate] ?? 0;
+  // "This week" and the streak are present-tense status metrics: keep them anchored
+  // to the real today so they don't silently rewind while browsing past dates.
+  const weekCount = workoutsInWeekOf(workouts, today).length;
+  const streak = logStreak(loggedDates({ workouts, foods, metrics, waterByDate }), today);
 
   const snap = latestWeight(metrics);
   const weightParts: string[] = [];

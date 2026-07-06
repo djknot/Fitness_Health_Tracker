@@ -4,6 +4,7 @@ import { MEAL_TYPES, type FoodEntry, type MealType, type QuickFood } from '../ty
 import { useAppStore } from '../store/useAppStore';
 import { formatLong } from '../lib/dates';
 import { nutritionOn } from '../lib/stats';
+import { capitalize } from '../lib/strings';
 import { dailyTargetInfo, macroTargets, type DailyTargetInfo } from '../lib/recommend';
 import type { FoodRecord } from '../lib/foodDb';
 import { computeNutrition, searchFoods } from '../lib/foodSearch';
@@ -14,8 +15,6 @@ import { Meter } from '../components/Meter';
 import { MacroBar } from '../components/MacroBar';
 import { BarcodeScanner } from '../components/nutrition/BarcodeScanner';
 import { FastingCard } from '../components/nutrition/FastingCard';
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const TARGET_SOURCE_LABELS: Record<DailyTargetInfo['source'], string> = {
   manual: 'manual goal',

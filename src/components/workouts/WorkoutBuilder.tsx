@@ -62,10 +62,6 @@ export interface BuilderSeed {
   exercises: Exercise[];
 }
 
-export function emptySeed(): BuilderSeed {
-  return { editing: null, date: todayISO(), name: '', exercises: [] };
-}
-
 const defaultSet = (): DraftSet => ({ reps: '10', weight: '' });
 
 export default function WorkoutBuilder({
@@ -114,7 +110,9 @@ export default function WorkoutBuilder({
     };
   };
 
-  const [date, setDate] = useState(seed.date);
+  // The workout is always logged to the day you're viewing — DateNav is the date
+  // control, and editing opens from that day's card, so seed.date already equals it.
+  const date = seed.date;
   const [name, setName] = useState(seed.name);
   const [exercises, setExercises] = useState<DraftExercise[]>(() =>
     seed.exercises.length > 0 ? seed.exercises.map(toDraft) : [makeExercise()],
@@ -221,7 +219,10 @@ export default function WorkoutBuilder({
 
   return (
     <section className="card">
-      <CardTitle title={seed.editing ? 'Edit workout' : 'Log workout'} />
+      <CardTitle
+        title={seed.editing ? 'Edit workout' : 'Log workout'}
+        sub={seed.editing ? undefined : `For ${relativeDayLabel(date)}`}
+      />
       {seed.editing && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-accent-wash px-3 py-2">
           <p className="text-sm text-ink2">
@@ -257,26 +258,13 @@ export default function WorkoutBuilder({
           </Field>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Date">
-            <TextInput
-              type="date"
-              value={date}
-              max={todayISO()}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v && v <= todayISO()) setDate(v);
-              }}
-            />
-          </Field>
-          <Field label="Workout name">
-            <TextInput
-              value={name}
-              placeholder="Push day"
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Field>
-        </div>
+        <Field label="Workout name">
+          <TextInput
+            value={name}
+            placeholder="Push day"
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
 
         <Field label="Calories burned (optional)">
           <TextInput

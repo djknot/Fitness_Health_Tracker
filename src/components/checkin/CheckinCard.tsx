@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import type { MetricEntry } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
+import { todayISO } from '../../lib/dates';
 import { displayToKg, formatWeight, kgToDisplay, weightUnit } from '../../lib/units';
 import { latestWeight } from '../../lib/stats';
 import { Button, CardTitle, Field, TextInput } from '../ui';
@@ -36,7 +37,11 @@ export function CheckinCard({ date }: { date: string }) {
   }
 
   const wUnit = weightUnit(goals.units);
-  const prefillKg = merged.weightKg ?? latestWeight(metrics)?.weightKg;
+  // Prefill the day's own weigh-in; fall back to the latest weight ONLY for today,
+  // so saving a sleep/mood-only check-in on a past day can't fabricate a weight
+  // measurement for a day the user never weighed in on.
+  const prefillKg =
+    merged.weightKg ?? (date === todayISO() ? latestWeight(metrics)?.weightKg : undefined);
   const [weight, setWeight] = useState(() =>
     prefillKg != null ? String(kgToDisplay(prefillKg, goals.units)) : '',
   );
