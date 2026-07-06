@@ -101,6 +101,13 @@
 - Dashboard weight-trend range picker (1M–All); `.scroll-row` fixes chip-strip scrollbar overlap.
 - Deploy safeguard: verify step auto-retries GitHub's flaky Pages publish; race fixed
   by matching the publish run via the pushed gh-pages commit SHA (proven on a live deploy).
+- Global selected date: non-persisted store `selectedDate` + shared `DateNav` drive
+  Dashboard/Workouts/Nutrition in lockstep; removed the recent-workouts, workout-history,
+  and saved-meals sections (date navigation replaces "prior days"). Clickable dashboard
+  stat cards → Nutrition/Workouts. Workouts builder gained a template dropdown and logs
+  to the viewed day; Nutrition sections gained Saved-meal/Recent/Favorite dropdowns;
+  Settings manages (deletes) templates + saved meals. Day-scoped data follows the date;
+  this-week/streak stay anchored to today. (adversarial review: 4 findings fixed.)
 
 ## Known gaps / backlog
 - No service worker yet (app shell not offline-cacheable; manifest-only PWA).

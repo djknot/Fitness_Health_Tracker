@@ -59,6 +59,21 @@ post-v0.2 follow-ups requested by the user.
   `$GITHUB_ENV`) and matching `.headSha == env.SHA`. PROVEN on the live deploy (run
   28725230621): verify step took 28s, polled → found OUR new publish run 28725241401
   (SHA 8d6c38ae) → watched it to ✅ success. Live site current (gh-pages = deploy f35d67d).
+- Follow-up 6 (DONE): **global selected date + declutter.** New non-persisted store
+  `selectedDate`/`setSelectedDate` (default today, resets each load) + shared `DateNav`
+  (prev/next/date/Today); Dashboard, Workouts, Nutrition all read it in lockstep.
+  Dashboard: Calories/Water/Workouts stat cards are now buttons → Nutrition/Workouts
+  (StatCard `onClick`); "Recent workouts" section removed; check-in is date-aware
+  (remounts on date). Workouts: only the selected day's workouts (grouped history +
+  standalone Templates card removed); "Start from template" dropdown moved INTO the
+  builder; the builder's editable Date field removed (logs to the viewed day). Nutrition:
+  date from store; "Saved meals" card removed; per-section Saved-meal/Recent/Favorite
+  `<select>` dropdowns replace the chip rows. Settings gained a "Saved routines & meals"
+  card (the new home for deleting templates + saved meals). Review fixes: check-in
+  weight only prefills for today (no past-day fabrication); this-week & streak stay
+  anchored to today (day-scoped calories/water still follow the date). tsc/147 tests/
+  build green; 29-check Playwright e2e; 4-agent adversarial review (2 clean, 4 real
+  findings fixed). `capitalize`→`lib/strings.ts`.
 
 ## State right now — v0.2 pages COMPLETE + review round applied
 - All five pages upgraded + Reports real page + `lib/reports.ts`; new components
