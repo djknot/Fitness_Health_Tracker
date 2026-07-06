@@ -1,24 +1,15 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import {
-  BookmarkPlus,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Plus,
-  ScanBarcode,
-  Star,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { BookmarkPlus, Pencil, ScanBarcode, Star, Trash2, X } from 'lucide-react';
 import { MEAL_TYPES, type FoodEntry, type MealType, type QuickFood } from '../types';
 import { useAppStore } from '../store/useAppStore';
-import { addDays, formatLong, todayISO } from '../lib/dates';
+import { formatLong } from '../lib/dates';
 import { nutritionOn } from '../lib/stats';
 import { dailyTargetInfo, macroTargets, type DailyTargetInfo } from '../lib/recommend';
 import type { FoodRecord } from '../lib/foodDb';
 import { computeNutrition, searchFoods } from '../lib/foodSearch';
 import { quickFoodKey } from '../lib/quickfoods';
 import { Button, CardTitle, Field, IconButton, PageHeader, Select, TextInput } from '../components/ui';
+import { DateNav } from '../components/DateNav';
 import { Meter } from '../components/Meter';
 import { MacroBar } from '../components/MacroBar';
 import { BarcodeScanner } from '../components/nutrition/BarcodeScanner';
@@ -46,33 +37,44 @@ function macroValid(s: string): boolean {
   return Number.isFinite(n) && n >= 0;
 }
 
-/** One-tap logging chips (favorites / recents); horizontally scrollable on mobile. */
-function QuickChips({
+/**
+ * One-tap logging control: pick a saved meal / recent / favorite from a dropdown
+ * and it is logged immediately, then the select snaps back to its placeholder.
+ * Renders nothing when there is nothing to pick, so empty sections stay quiet.
+ */
+function LogPicker<T extends { id: string }>({
   label,
+  placeholder,
   items,
+  optionLabel,
   onPick,
 }: {
   label: string;
-  items: QuickFood[];
-  onPick: (qf: QuickFood) => void;
+  placeholder: string;
+  items: T[];
+  optionLabel: (item: T) => string;
+  onPick: (item: T) => void;
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="scroll-row mt-3 flex items-center gap-1.5 whitespace-nowrap pb-2">
-      <span className="shrink-0 text-[11px] font-medium text-muted">{label}</span>
-      {items.map((qf) => (
-        <button
-          key={qf.id}
-          type="button"
-          onClick={() => onPick(qf)}
-          title={`Log ${qf.name} (${qf.calories} kcal)`}
-          className="chip shrink-0 bg-accent-wash text-ink2 transition-colors hover:bg-accent-soft hover:text-ink"
-        >
-          {qf.name}
-          <span className="text-muted">{qf.calories}</span>
-        </button>
-      ))}
-    </div>
+    <Field label={label} className="min-w-40 flex-1">
+      <Select
+        aria-label={label}
+        value=""
+        onChange={(e) => {
+          const it = items.find((x) => x.id === e.target.value);
+          if (it) onPick(it);
+          e.currentTarget.value = '';
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {items.map((it) => (
+          <option key={it.id} value={it.id}>
+            {optionLabel(it)}
+          </option>
+        ))}
+      </Select>
+    </Field>
   );
 }
 
@@ -125,10 +127,11 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
     };
   }, [name, selected, usdaApiKey, customFoods]);
 
-  const favorites = favoriteFoods.slice(0, 8);
+  // Favorites and (favorite-deduped) recents for this section's dropdowns.
+  const favorites = favoriteFoods.slice(0, 12);
   const recents = useMemo(() => {
     const favKeys = new Set(favoriteFoods.map(quickFoodKey));
-    return recentFoods.filter((r) => !favKeys.has(quickFoodKey(r))).slice(0, 8);
+    return recentFoods.filter((r) => !favKeys.has(quickFoodKey(r))).slice(0, 12);
   }, [favoriteFoods, recentFoods]);
   // Saved meals for THIS section, so you can log a whole meal where you add food.
   const sectionMeals = savedMeals.filter((m) => m.meal === meal);
@@ -219,25 +222,33 @@ function AddFoodRow({ date, meal }: { date: string; meal: MealType }) {
 
   return (
     <div>
-      {sectionMeals.length > 0 && (
-        <div className="scroll-row mt-3 flex items-center gap-1.5 whitespace-nowrap pb-2">
-          <span className="shrink-0 text-[11px] font-medium text-muted">Meals</span>
-          {sectionMeals.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => logSavedMeal(m.id, date)}
-              title={`Log "${m.name}" — ${m.items.length} ${m.items.length === 1 ? 'item' : 'items'}`}
-              className="chip shrink-0 bg-accent-wash text-ink2 transition-colors hover:bg-accent-soft hover:text-ink"
-            >
-              <BookmarkPlus size={12} className="text-muted" />
-              {m.name}
-            </button>
-          ))}
+      {(sectionMeals.length > 0 || recents.length > 0 || favorites.length > 0) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <LogPicker
+            label="Saved meal"
+            placeholder="Log a saved meal…"
+            items={sectionMeals}
+            optionLabel={(m) =>
+              `${m.name} · ${m.items.length} ${m.items.length === 1 ? 'item' : 'items'}`
+            }
+            onPick={(m) => logSavedMeal(m.id, date)}
+          />
+          <LogPicker
+            label="Recent"
+            placeholder="Log a recent food…"
+            items={recents}
+            optionLabel={(r) => `${r.name} · ${r.calories} kcal`}
+            onPick={logQuick}
+          />
+          <LogPicker
+            label="Favorite"
+            placeholder="Log a favorite…"
+            items={favorites}
+            optionLabel={(f) => `${f.name} · ${f.calories} kcal`}
+            onPick={logQuick}
+          />
         </div>
       )}
-      <QuickChips label="★ Favorites" items={favorites} onPick={logQuick} />
-      <QuickChips label="Recent" items={recents} onPick={logQuick} />
 
       {/* noValidate: values seeded from lookups/store can be any precision — JS parsing
           validates; native step/min checks would silently block submission. */}
@@ -557,22 +568,15 @@ export default function Nutrition() {
   const profile = useAppStore((s) => s.profile);
   const prefs = useAppStore((s) => s.prefs);
   const favoriteFoods = useAppStore((s) => s.favoriteFoods);
-  const savedMeals = useAppStore((s) => s.savedMeals);
   const addWater = useAppStore((s) => s.addWater);
   const deleteFood = useAppStore((s) => s.deleteFood);
   const toggleFavoriteFood = useAppStore((s) => s.toggleFavoriteFood);
   const addSavedMeal = useAppStore((s) => s.addSavedMeal);
-  const deleteSavedMeal = useAppStore((s) => s.deleteSavedMeal);
-  const logSavedMeal = useAppStore((s) => s.logSavedMeal);
+  const date = useAppStore((s) => s.selectedDate);
 
-  const [date, setDate] = useState(todayISO());
   const [editingId, setEditingId] = useState<string | null>(null);
-  const today = todayISO();
-
-  const changeDate = (d: string) => {
-    setDate(d);
-    setEditingId(null);
-  };
+  // Editing a specific entry doesn't carry across a date change.
+  useEffect(() => setEditingId(null), [date]);
 
   const day = nutritionOn(foods, date);
   const targetInfo = dailyTargetInfo({ goals, profile, prefs, metrics, foods, workouts }, date);
@@ -584,40 +588,7 @@ export default function Nutrition() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
-      <PageHeader
-        title="Nutrition"
-        sub={formatLong(date)}
-        action={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" aria-label="Previous day" onClick={() => changeDate(addDays(date, -1))}>
-              <ChevronLeft size={18} />
-            </Button>
-            <Button
-              variant="ghost"
-              aria-label="Next day"
-              disabled={date === today}
-              onClick={() => changeDate(addDays(date, 1))}
-            >
-              <ChevronRight size={18} />
-            </Button>
-            <TextInput
-              type="date"
-              value={date}
-              max={today}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v && v <= today) changeDate(v);
-              }}
-              className="w-40"
-            />
-            {date !== today && (
-              <Button variant="ghost" onClick={() => changeDate(today)}>
-                Today
-              </Button>
-            )}
-          </div>
-        }
-      />
+      <PageHeader title="Nutrition" sub={formatLong(date)} action={<DateNav />} />
 
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <section className="card">
@@ -683,43 +654,6 @@ export default function Nutrition() {
       </div>
 
       <FastingCard />
-
-      {savedMeals.length > 0 && (
-        <section className="card">
-          <CardTitle title="Saved meals" sub="Log a whole meal in one tap." />
-          <ul className="flex flex-col gap-1">
-            {savedMeals.map((m) => {
-              const kcal = m.items.reduce((n, it) => n + it.calories, 0);
-              return (
-                <li key={m.id} className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1 py-1">
-                    <p className="truncate text-sm font-medium text-ink">{m.name}</p>
-                    <p className="text-xs text-muted">
-                      {capitalize(m.meal)} · {m.items.length}{' '}
-                      {m.items.length === 1 ? 'item' : 'items'} · {kcal.toLocaleString('en-US')} kcal
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="shrink-0"
-                    onClick={() => logSavedMeal(m.id, date)}
-                  >
-                    <Plus size={14} /> Log
-                  </Button>
-                  <IconButton
-                    label={`Delete saved meal "${m.name}"`}
-                    onClick={() => {
-                      if (window.confirm(`Delete saved meal "${m.name}"?`)) deleteSavedMeal(m.id);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </IconButton>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
 
       {MEAL_TYPES.map((meal) => {
         const entries = foods.filter((f) => f.date === date && f.meal === meal);

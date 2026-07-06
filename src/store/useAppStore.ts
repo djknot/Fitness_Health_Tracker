@@ -17,10 +17,19 @@ import type {
 import { emptyData } from '../lib/defaults';
 import { pushRecent, quickFoodKey } from '../lib/quickfoods';
 import { uid } from '../lib/id';
+import { todayISO } from '../lib/dates';
 
 interface AppStore extends AppData {
   /** Bumped on wholesale dataset replacement so forms can re-seed drafts. Not persisted. */
   dataVersion: number;
+
+  /**
+   * The single date every day-scoped page (Dashboard, Workouts, Nutrition) reads
+   * and writes against. Not persisted — it resets to today on each app load, so
+   * changing it is a navigation gesture, not a saved preference.
+   */
+  selectedDate: string;
+  setSelectedDate(date: string): void;
 
   addWorkout(w: Omit<Workout, 'id'>): void;
   updateWorkout(id: string, w: Omit<Workout, 'id'>): void;
@@ -70,6 +79,8 @@ export const useAppStore = create<AppStore>()(
     (set) => ({
       ...emptyData(),
       dataVersion: 0,
+      selectedDate: todayISO(),
+      setSelectedDate: (date) => set({ selectedDate: date }),
 
       addWorkout: (w) => set((s) => ({ workouts: [...s.workouts, { ...w, id: uid() }] })),
       updateWorkout: (id, w) =>

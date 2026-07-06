@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BookmarkPlus, X } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import type { Exercise, ExerciseKind, Workout } from '../../types';
+import type { Exercise, ExerciseKind, Workout, WorkoutTemplate } from '../../types';
 import { relativeDayLabel, todayISO } from '../../lib/dates';
 import { displayToKg, kgToDisplay, weightUnit } from '../../lib/units';
 import { MINUTES_PER_SET } from '../../lib/burn';
@@ -80,6 +80,7 @@ export default function WorkoutBuilder({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const goals = useAppStore((s) => s.goals);
+  const templates = useAppStore((s) => s.templates);
   const addWorkout = useAppStore((s) => s.addWorkout);
   const updateWorkout = useAppStore((s) => s.updateWorkout);
   const addTemplate = useAppStore((s) => s.addTemplate);
@@ -211,6 +212,13 @@ export default function WorkoutBuilder({
     addTemplate({ name: name.trim(), exercises: buildExercises() });
   };
 
+  /** Load a saved routine into the draft (name + a deep copy of its exercises). */
+  const loadTemplate = (t: WorkoutTemplate) => {
+    if (dirty && !window.confirm(`Replace the current draft with "${t.name}"?`)) return;
+    setName(t.name);
+    setExercises(t.exercises.length > 0 ? t.exercises.map(toDraft) : [makeExercise()]);
+  };
+
   return (
     <section className="card">
       <CardTitle title={seed.editing ? 'Edit workout' : 'Log workout'} />
@@ -227,6 +235,28 @@ export default function WorkoutBuilder({
         </div>
       )}
       <div className="flex flex-col gap-3">
+        {!seed.editing && templates.length > 0 && (
+          <Field label="Start from template">
+            <Select
+              aria-label="Start from template"
+              value=""
+              onChange={(e) => {
+                const t = templates.find((x) => x.id === e.target.value);
+                if (t) loadTemplate(t);
+                e.currentTarget.value = '';
+              }}
+            >
+              <option value="">Choose a saved routine…</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} · {t.exercises.length}{' '}
+                  {t.exercises.length === 1 ? 'exercise' : 'exercises'}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Date">
             <TextInput

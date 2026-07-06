@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Droplets, Dumbbell, Flame, Utensils } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { addDays, formatLong, relativeDayLabel, todayISO } from '../lib/dates';
+import { addDays, formatLong, todayISO } from '../lib/dates';
 import {
   caloriesSeries,
   latestWeight,
@@ -10,15 +10,13 @@ import {
   logStreak,
   nutritionOn,
   weightSeries,
-  workoutCardioMin,
-  workoutSetCount,
   workoutsInWeekOf,
-  workoutVolumeKg,
 } from '../lib/stats';
 import { dailyTargetInfo } from '../lib/recommend';
 import { formatWeight, kgToDisplay, weightUnit } from '../lib/units';
 import { sampleData } from '../lib/sample';
 import { Button, CardTitle, PageHeader } from '../components/ui';
+import { DateNav } from '../components/DateNav';
 import { Meter } from '../components/Meter';
 import { StatCard } from '../components/StatCard';
 import { CheckinCard } from '../components/checkin/CheckinCard';
@@ -51,6 +49,7 @@ export default function Dashboard() {
   const profile = useAppStore((s) => s.profile);
   const prefs = useAppStore((s) => s.prefs);
   const dataVersion = useAppStore((s) => s.dataVersion);
+  const selectedDate = useAppStore((s) => s.selectedDate);
   const replaceAll = useAppStore((s) => s.replaceAll);
   const [weightDays, setWeightDays] = useState<number | null>(90);
 
@@ -81,12 +80,17 @@ export default function Dashboard() {
     );
   }
 
-  const day = nutritionOn(foods, today);
-  const targetInfo = dailyTargetInfo({ goals, profile, prefs, metrics, foods, workouts }, today);
+  // Day-scoped stats follow the globally selected date; the trend charts below
+  // stay anchored to the real "today" so they always read as recent history.
+  const day = nutritionOn(foods, selectedDate);
+  const targetInfo = dailyTargetInfo(
+    { goals, profile, prefs, metrics, foods, workouts },
+    selectedDate,
+  );
   const remaining = targetInfo.target - day.calories;
-  const weekCount = workoutsInWeekOf(workouts, today).length;
-  const streak = logStreak(loggedDates({ workouts, foods, metrics, waterByDate }), today);
-  const water = waterByDate[today] ?? 0;
+  const weekCount = workoutsInWeekOf(workouts, selectedDate).length;
+  const streak = logStreak(loggedDates({ workouts, foods, metrics, waterByDate }), selectedDate);
+  const water = waterByDate[selectedDate] ?? 0;
 
   const snap = latestWeight(metrics);
   const weightParts: string[] = [];
@@ -121,13 +125,11 @@ export default function Dashboard() {
     );
   }
 
-  const recent = [...workouts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
-
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
-      <PageHeader title={greeting()} sub={formatLong(today)} />
+      <PageHeader title={greeting()} sub={formatLong(selectedDate)} action={<DateNav />} />
 
-      <CheckinCard key={dataVersion} />
+      <CheckinCard key={`${dataVersion}:${selectedDate}`} date={selectedDate} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
@@ -140,13 +142,14 @@ export default function Dashboard() {
               : undefined
           }
           sub={`${day.calories.toLocaleString('en-US')} of ${targetInfo.target.toLocaleString('en-US')} kcal eaten`}
+          onClick={() => navigate('/nutrition')}
         >
           {(targetInfo.burnKcal > 0 || targetInfo.source === 'recommended-adaptive') && (
             <div className="flex flex-wrap items-center gap-1.5">
               {targetInfo.burnKcal > 0 && (
                 <span
                   className="text-xs font-medium text-ink2"
-                  title={`Estimated ${targetInfo.burnKcal.toLocaleString('en-US')} kcal burned in today's workouts, added to your ${targetInfo.baseTarget.toLocaleString('en-US')} kcal base target.`}
+                  title={`Estimated ${targetInfo.burnKcal.toLocaleString('en-US')} kcal burned in this day's workouts, added to your ${targetInfo.baseTarget.toLocaleString('en-US')} kcal base target.`}
                 >
                   +{targetInfo.burnKcal.toLocaleString('en-US')} earned back
                 </span>
@@ -174,6 +177,7 @@ export default function Dashboard() {
           label="Water"
           value={`${water.toLocaleString('en-US')} ml`}
           sub={`of ${goals.dailyWaterMl.toLocaleString('en-US')} ml`}
+          onClick={() => navigate('/nutrition')}
         >
           <Meter value={water} max={goals.dailyWaterMl} label="Water" className="mt-1" />
         </StatCard>
@@ -182,6 +186,7 @@ export default function Dashboard() {
           label="Workouts this week"
           value={String(weekCount)}
           sub={`of ${goals.weeklyWorkouts} planned`}
+          onClick={() => navigate('/workouts')}
         >
           <Meter
             value={weekCount}
@@ -230,51 +235,6 @@ export default function Dashboard() {
           <CaloriesChart data={caloriesSeries(foods, today, 7)} target={targetInfo.baseTarget} />
         </section>
       </div>
-
-      <section className="card">
-        <CardTitle
-          title="Recent workouts"
-          action={
-            <Button variant="ghost" onClick={() => navigate('/workouts')}>
-              View all
-            </Button>
-          }
-        />
-        {recent.length === 0 ? (
-          <p className="text-sm text-muted">No workouts yet — log your first one.</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {recent.map((w) => {
-              const sets = workoutSetCount(w);
-              const volumeKg = workoutVolumeKg(w);
-              const cardioMin = workoutCardioMin(w);
-              return (
-                <li
-                  key={w.id}
-                  className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink">{w.name}</p>
-                    <p className="text-xs text-muted">{relativeDayLabel(w.date, today)}</p>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                    {sets > 0 && <span className="chip bg-accent-wash text-ink2">{sets} sets</span>}
-                    {volumeKg > 0 && (
-                      <span className="chip bg-accent-wash text-ink2">
-                        {Math.round(kgToDisplay(volumeKg, goals.units)).toLocaleString('en-US')}{' '}
-                        {weightUnit(goals.units)}
-                      </span>
-                    )}
-                    {cardioMin > 0 && (
-                      <span className="chip bg-accent-wash text-ink2">{cardioMin} min</span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }
